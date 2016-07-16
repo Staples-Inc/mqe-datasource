@@ -13,7 +13,7 @@ npm install
 grunt
 ```
 
-When you update project, run grunt to rebuild.
+When you updated a project, run grunt to rebuild.
 ```sh
 git pull
 grunt
