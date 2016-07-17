@@ -5,6 +5,9 @@
     <input type="text" class="gf-form-input"
       ng-model="ctrl.target.query"
       spellcheck="false"
+      bs-typeahead="ctrl.metrics"
+      data-min-length=0
+      data-items=8
       ng-blur="ctrl.onChangeInternal()">
     </input>
   </div>

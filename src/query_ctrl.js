@@ -16,6 +16,29 @@ export class MQEQueryCtrl extends QueryCtrl {
       rawQuery: ""
     };
     _.defaults(this.target, target_defaults);
+
+    // bs-typeahead can't work with async code so we need to
+    // store metrics first.
+    this.metrics = [];
+    this.updateMetrics();
+
+    // this.getMetrics = () => {
+    //   this.updateMetrics();
+    //   return this.metrics;
+    // };
+  }
+
+  invokeMQEQuery(query) {
+    return this.datasource._mqe_query(query).then(result => {
+      return result.body;
+    });
+  }
+
+  updateMetrics() {
+    var self = this;
+    this.invokeMQEQuery(MQEQuery.getMetrics()).then(metrics => {
+      self.metrics = metrics;
+    });
   }
 
   // Event handlers
@@ -35,15 +58,6 @@ export class MQEQueryCtrl extends QueryCtrl {
   ///////////////////////
   // Query suggestions //
   ///////////////////////
-
-  getMetrics() {
-    var schema = this.schemaSegment.value;
-    var self = this;
-    return this.invokeMQEQuery(MQEQuery.getMetrics(schema))
-      .then(rows => {
-        return self.transformToSegments(rows);
-      });
-  }
 
   transformToSegments(results) {
     var segments = _.map(_.flatten(results), value => {
