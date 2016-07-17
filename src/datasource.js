@@ -27,7 +27,7 @@ export class MQEDatasource {
       } else {
         if (target.rawQuery) {
           // Use raw query
-          mqeQuery = target.query;
+          mqeQuery = MQEQuery.addTimeRange(target.query, timeFrom, timeTo);
         } else {
           // Build query
           var queryModel = new MQEQuery(target, this.templateSrv, options.scopedVars);

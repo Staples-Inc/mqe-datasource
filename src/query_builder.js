@@ -25,4 +25,18 @@ export default class MQEQuery {
     var query = "describe all";
     return query;
   }
+
+  static addTimeRange(query, timeFrom, timeTo, interval) {
+    var timeRangeRegex = /from.*to/;
+    if(!timeRangeRegex.test(query)) {
+      query = trim(query) + " from " + timeFrom + " to " + timeTo;
+    }
+    return query;
+  }
+}
+
+function trim(str) {
+  var trimRegex = /^[\s]*(.*?)[\s]*$/;
+  var match = str.match(trimRegex);
+  return match ? match[0] : match;
 }
