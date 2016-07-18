@@ -14,7 +14,44 @@ export default class MQEQuery {
   /////////////////////
 
   render(timeFrom, timeTo, interval) {
-    // pass
+    var target = this.target;
+    var query = "";
+    query += target.metric;
+    if (target.whereClauses.length) {
+      query += " where " + this.renderWhereClauses(target.whereClauses);
+    }
+    query = MQEQuery.addTimeRange(query, timeFrom, timeTo);
+    return query;
+  }
+
+  renderWhereClauses(whereClauses) {
+    var renderedClauses = _.map(whereClauses, (clauseObj, index) => {
+      var rendered = "";
+      if (index !== 0) {
+        rendered += clauseObj.condition + " ";
+      }
+
+      // Put non-numeric values into quotes.
+      var value;
+      if (_.isNumber(clauseObj.value) ||
+          this.containsVariable(clauseObj.value)) {
+        value = clauseObj.value;
+      } else {
+        value = "'" + clauseObj.value + "'";
+      }
+      rendered += clauseObj.column + ' ' + clauseObj.operator + ' ' + value;
+      return rendered;
+    });
+    return renderedClauses.join(' ');
+  }
+
+  // Check for template variables
+  containsVariable(str) {
+    var variables = _.map(this.templateSrv.variables, 'name');
+    var self = this;
+    return _.some(variables, variable => {
+      return self.templateSrv.containsVariable(str, variable);
+    });
   }
 
   ////////////////////
@@ -24,6 +61,10 @@ export default class MQEQuery {
   static getMetrics() {
     var query = "describe all";
     return query;
+  }
+
+  static getColumns(metric) {
+    return "describe " + metric;
   }
 
   static addTimeRange(query, timeFrom, timeTo, interval) {

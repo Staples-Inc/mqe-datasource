@@ -5,7 +5,7 @@
     <input type="text" class="gf-form-input"
       ng-model="ctrl.target.query"
       spellcheck="false"
-      bs-typeahead="ctrl.metrics"
+      bs-typeahead="ctrl.availableMetrics"
       data-min-length=0
       data-items=8
       ng-blur="ctrl.onChangeInternal()">
@@ -18,8 +18,29 @@
       <div class="gf-form">
         <label class="gf-form-label query-keyword width-7">SELECT</label>
       </div>
+      <div class="gf-form">
+        <input type="text" class="gf-form-input width-18"
+          ng-model="ctrl.target.metric"
+          spellcheck="false"
+          bs-typeahead="ctrl.availableMetrics"
+          data-min-length=0
+          data-items=8
+          ng-blur="ctrl.onChangeInternal()">
+        </input>
+      </div>
       <div class="gf-form gf-form--grow">
         <div class="gf-form-label gf-form-label--grow"></div>
+      </div>
+    </div>
+    <div class="gf-form-inline">
+      <div class="gf-form">
+        <label class="gf-form-label query-keyword width-7">WHERE</label>
+      </div>
+      <div class="gf-form" ng-repeat="segment in ctrl.whereSegments">
+        <metric-segment segment="segment"
+          get-options="ctrl.getColumnsOrValues(segment, $index)"
+          on-change="ctrl.whereSegmentUpdated(segment, $index)">
+        </metric-segment>
       </div>
     </div>
   </div>
