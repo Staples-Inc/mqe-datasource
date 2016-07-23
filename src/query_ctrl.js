@@ -29,6 +29,9 @@ export class MQEQueryCtrl extends QueryCtrl {
     // store metrics first.
     this.availableMetrics = [];
     this.updateMetrics();
+    // Pass this to getMetrics() function, because it's called from bs-typeahead
+    // without proper context.
+    this.getMetrics = _.bind(this.getMetrics, this);
   }
 
   invokeMQEQuery(query) {
@@ -106,6 +109,14 @@ export class MQEQueryCtrl extends QueryCtrl {
   ///////////////////////
   // Query suggestions //
   ///////////////////////
+
+  getMetrics() {
+    var metrics = this.availableMetrics;
+    for (let variable of this.templateSrv.variables) {
+      metrics.unshift('$' + variable.name);
+    }
+    return metrics;
+  }
 
   describeMetric(metric) {
     var describeQuery = MQEQuery.getColumns(metric);

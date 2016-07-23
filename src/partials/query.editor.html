@@ -5,7 +5,7 @@
     <input type="text" class="gf-form-input"
       ng-model="ctrl.target.query"
       spellcheck="false"
-      bs-typeahead="ctrl.availableMetrics"
+      bs-typeahead="ctrl.getMetrics"
       data-min-length=0
       data-items=8
       ng-blur="ctrl.onChangeInternal()">
@@ -22,7 +22,7 @@
         <input type="text" class="gf-form-input width-18"
           ng-model="ctrl.target.metric"
           spellcheck="false"
-          bs-typeahead="ctrl.availableMetrics"
+          bs-typeahead="ctrl.getMetrics"
           data-min-length=0
           data-items=8
           ng-blur="ctrl.onChangeInternal()">
