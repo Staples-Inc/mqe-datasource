@@ -70,13 +70,27 @@ export class MQEDatasource {
     }
 
     query = this.templateSrv.replace(query);
-    return this._mqe_query(query).then(response => {
-      return _.map(_.flatten(response.rows), row => {
+    return this._mqe_explore().then(result => {
+      return _.map(result[query], metric => {
         return {
-          text: row,
-          value: "'" + row + "'"
+          text: metric,
+          value: metric
         };
       });
+    });
+  }
+
+  // Invoke GET request to /token endpoint and returns list of metrics.
+  // For Staples only.
+  _mqe_explore() {
+    return this.backendSrv.datasourceRequest({
+      url: this.url + '/token/',
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(response => {
+      return response.data.body;
     });
   }
 

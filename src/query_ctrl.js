@@ -37,9 +37,15 @@ export class MQEQueryCtrl extends QueryCtrl {
     });
   }
 
+  exploreMetrics() {
+    return this.datasource._mqe_explore().then(result => {
+      return result.metrics;
+    });
+  }
+
   updateMetrics() {
     var self = this;
-    this.invokeMQEQuery(MQEQuery.getMetrics()).then(metrics => {
+    this.exploreMetrics().then(metrics => {
       self.availableMetrics = metrics;
     });
   }
@@ -121,7 +127,7 @@ export class MQEQueryCtrl extends QueryCtrl {
   }
 
   getColumnsOrValues(segment, index) {
-    var metric = this.target.metric;
+    var metric = this.templateSrv.replace(this.target.metric);
     var self = this;
     if (segment.type === 'condition') {
       return this.$q.when([
