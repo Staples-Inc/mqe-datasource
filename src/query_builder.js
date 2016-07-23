@@ -13,15 +13,24 @@ export default class MQEQuery {
   // Query Rendering //
   /////////////////////
 
-  render(timeFrom, timeTo, interval) {
+  render(metricList, timeFrom, timeTo, interval) {
     var target = this.target;
-    var query = "";
-    query += target.metric;
-    if (target.whereClauses.length) {
-      query += " where " + this.renderWhereClauses(target.whereClauses);
+    var metric = this.target.metric;
+    var metrics = [];
+    if (containsWildcard(metric)) {
+      metrics = filterMetrics(metric, metricList);
+    } else {
+      metrics = [metric];
     }
-    query = MQEQuery.addTimeRange(query, timeFrom, timeTo);
-    return query;
+    return _.map(metrics, metric => {
+      var query = "";
+      query += metric;
+      if (target.whereClauses.length) {
+        query += " where " + this.renderWhereClauses(target.whereClauses);
+      }
+      query = MQEQuery.addTimeRange(query, timeFrom, timeTo);
+      return query;
+    });
   }
 
   renderWhereClauses(whereClauses) {
@@ -74,6 +83,18 @@ export default class MQEQuery {
     }
     return query;
   }
+}
+
+function containsWildcard(str) {
+  var wildcardRegex = /\*/;
+  return wildcardRegex.test(str);
+}
+
+function filterMetrics(str, metrics) {
+  var filterRegex = new RegExp(str.replace('*', '.*'), 'g');
+  return _.filter(metrics, metric => {
+    return filterRegex.test(metric);
+  });
 }
 
 function trim(str) {

@@ -19,7 +19,9 @@ export class MQEDatasource {
   query(options) {
     var timeFrom = Math.ceil(dateMath.parse(options.range.from));
     var timeTo = Math.ceil(dateMath.parse(options.range.to));
-    var mqeQuery;
+    var mqeQuery,
+        mqeQueryPromise;
+    var self = this;
 
     var queries = _.map(options.targets, target => {
       if (target.hide || (target.rawQuery && !target.query)) {
@@ -28,15 +30,28 @@ export class MQEDatasource {
         if (target.rawQuery) {
           // Use raw query
           mqeQuery = MQEQuery.addTimeRange(target.query, timeFrom, timeTo);
+
+          // Return query in async manner
+          mqeQueryPromise = this.$q.when([mqeQuery]);
         } else {
+
           // Build query
           var queryModel = new MQEQuery(target, this.templateSrv, options.scopedVars);
-          mqeQuery = queryModel.render(timeFrom, timeTo, options.interval);
+          mqeQueryPromise = this._mqe_explore().then(result => {
+            return result.metrics;
+          }).then(metrics => {
+            return queryModel.render(metrics, timeFrom, timeTo, options.interval);
+          });
         }
 
-        mqeQuery = this.templateSrv.replace(mqeQuery);
-        return this._mqe_query(mqeQuery).then(response => {
-          return response_handler.handle_response(target, response);
+        return mqeQueryPromise.then(mqeQueries => {
+          var queryPromises = _.map(mqeQueries, mqeQuery => {
+            mqeQuery = self.templateSrv.replace(mqeQuery);
+            return self._mqe_query(mqeQuery).then(response => {
+              return response_handler.handle_response(target, response);
+            });
+          });
+          return self.$q.all(queryPromises);
         });
       }
     });
