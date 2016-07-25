@@ -16,9 +16,6 @@
   <div ng-if="!ctrl.target.rawQuery">
     <div class="gf-form-inline">
       <div class="gf-form">
-        <label class="gf-form-label query-keyword width-7">SELECT</label>
-      </div>
-      <div class="gf-form">
         <input type="text" class="gf-form-input width-18"
           ng-model="ctrl.target.metric"
           spellcheck="false"
@@ -34,13 +31,25 @@
     </div>
     <div class="gf-form-inline">
       <div class="gf-form">
-        <label class="gf-form-label query-keyword width-7">WHERE</label>
+        <label class="gf-form-label query-keyword width-4">App</label>
       </div>
-      <div class="gf-form" ng-repeat="segment in ctrl.whereSegments">
+      <div class="gf-form" ng-repeat="segment in ctrl.appSegments">
         <metric-segment segment="segment"
-          get-options="ctrl.getColumnsOrValues(segment, $index)"
-          on-change="ctrl.whereSegmentUpdated(segment, $index)">
+          get-options="ctrl.getApps()"
+          on-change="ctrl.appSegmentChanged(segment, $index)">
         </metric-segment>
+      </div>
+      <div class="gf-form">
+        <label class="gf-form-label query-keyword width-5">Host</label>
+      </div>
+      <div class="gf-form" ng-repeat="segment in ctrl.hostSegments">
+        <metric-segment segment="segment"
+          get-options="ctrl.getHosts()"
+          on-change="ctrl.hostSegmentChanged(segment, $index)">
+        </metric-segment>
+      </div>
+      <div class="gf-form gf-form--grow">
+        <div class="gf-form-label gf-form-label--grow"></div>
       </div>
     </div>
   </div>

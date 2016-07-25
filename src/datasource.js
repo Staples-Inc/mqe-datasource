@@ -12,7 +12,7 @@ export class MQEDatasource {
     this.$q = $q;
     this.backendSrv = backendSrv;
     this.templateSrv = templateSrv;
-    // this.templateSrv.formatValue = formatMQEValue;
+    this.templateSrv.formatValue = formatMQEValue;
   }
 
   // Called once per panel (graph)
@@ -128,10 +128,10 @@ export class MQEDatasource {
 // Special value formatter for MQE.
 // Render multi-value variables for using in "IN" expression:
 // $host => ('backend01', 'backend02')
-// WHERE host IN $host => WHERE host IN ('backend01', 'backend02')
+// where host in $host => where host in ('backend01', 'backend02')
 function formatMQEValue(value, format, variable) {
   if (typeof value === 'string') {
     return value;
   }
-  return '(' + value.join(', ') + ')';
+  return value.join("', '");
 }

@@ -14,20 +14,36 @@ export default class MQEQuery {
   /////////////////////
 
   render(metricList, timeFrom, timeTo, interval) {
-    var target = this.target;
-    var metric = this.target.metric;
-    var metrics = [];
+    let target = this.target;
+    let metric = this.target.metric;
+    let metrics = [];
     if (containsWildcard(metric)) {
       metrics = filterMetrics(metric, metricList);
     } else {
       metrics = [metric];
     }
     return _.map(metrics, metric => {
-      var query = "";
+      let query = "";
       query += metric;
-      if (target.whereClauses.length) {
-        query += " where " + this.renderWhereClauses(target.whereClauses);
+
+      // Render apps and hosts
+      if (target.apps.length || target.hosts.length) {
+        query += " where ";
+        if (target.apps.length) {
+          query += "app in (" + _.map(target.apps, app => {
+            return "'" + app + "'";
+          }).join(', ') + ")";
+          if (target.hosts.length)  {
+            query += " and ";
+          }
+        }
+        if (target.hosts.length) {
+          query += "host in (" + _.map(target.hosts, host => {
+            return "'" + host + "'";
+          }).join(', ') + ")";
+        }
       }
+
       query = MQEQuery.addTimeRange(query, timeFrom, timeTo);
       return query;
     });
