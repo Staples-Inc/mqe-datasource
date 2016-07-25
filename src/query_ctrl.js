@@ -41,9 +41,15 @@ export class MQEQueryCtrl extends QueryCtrl {
   }
 
   exploreMetrics() {
-    return this.datasource._mqe_explore().then(result => {
-      return result.metrics;
-    });
+    return this.datasource._mqe_explore('metrics');
+  }
+
+  exploreApps() {
+    return this.datasource._mqe_explore('apps');
+  }
+
+  exploreHosts() {
+    return this.datasource._mqe_explore('hosts');
   }
 
   updateMetrics() {

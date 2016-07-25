@@ -23,3 +23,35 @@ export function handle_response(target, response) {
   });
   return _.flatten(timeseries, true);
 }
+
+export function handle_explore_response(query, response) {
+
+  function getTagset(response) {
+    let tags = {};
+    _.forEach(response.body['tagset'], (tagset) => {
+      _.forEach(tagset, (tagValue, tag) => {
+        if (!tags[tag]) {
+          tags[tag] = [];
+        }
+        tags[tag].push(tagValue);
+      });
+    });
+    _.forEach(tags, (tagValue, tag) => {
+      tags[tag] = _.uniq(_.flatten(tagValue));
+    });
+    return tags;
+  }
+
+  if (query === 'tagset') {
+    return getTagset(response);
+  }
+  else if (query === 'apps') {
+    return getTagset(response)['App'];
+  }
+  else if (query === 'hosts') {
+    return getTagset(response)['Hosts'];
+  }
+  else {
+    return response.body[query];
+  }
+}

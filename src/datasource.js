@@ -37,9 +37,7 @@ export class MQEDatasource {
 
           // Build query
           var queryModel = new MQEQuery(target, this.templateSrv, options.scopedVars);
-          mqeQueryPromise = this._mqe_explore().then(result => {
-            return result.metrics;
-          }).then(metrics => {
+          mqeQueryPromise = this._mqe_explore('metrics').then(metrics => {
             return queryModel.render(metrics, timeFrom, timeTo, options.interval);
           });
         }
@@ -85,8 +83,8 @@ export class MQEDatasource {
     }
 
     query = this.templateSrv.replace(query);
-    return this._mqe_explore().then(result => {
-      return _.map(result[query], metric => {
+    return this._mqe_explore(query).then(result => {
+      return _.map(result, metric => {
         return {
           text: metric,
           value: metric
@@ -97,7 +95,7 @@ export class MQEDatasource {
 
   // Invoke GET request to /token endpoint and returns list of metrics.
   // For Staples only.
-  _mqe_explore() {
+  _mqe_explore(query) {
     return this.backendSrv.datasourceRequest({
       url: this.url + '/token/',
       method: 'GET',
@@ -105,7 +103,7 @@ export class MQEDatasource {
         'Content-Type': 'application/json'
       }
     }).then(response => {
-      return response.data.body;
+      return response_handler.handle_explore_response(query, response.data);
     });
   }
 
