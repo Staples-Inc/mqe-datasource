@@ -14,12 +14,12 @@ System.register(['lodash', 'app/core/utils/datemath', './query_builder', './resp
   // Special value formatter for MQE.
   // Render multi-value variables for using in "IN" expression:
   // $host => ('backend01', 'backend02')
-  // WHERE host IN $host => WHERE host IN ('backend01', 'backend02')
+  // where host in $host => where host in ('backend01', 'backend02')
   function formatMQEValue(value, format, variable) {
     if (typeof value === 'string') {
       return value;
     }
-    return '(' + value.join(', ') + ')';
+    return value.join("', '");
   }
   return {
     setters: [function (_lodash) {
@@ -60,7 +60,7 @@ System.register(['lodash', 'app/core/utils/datemath', './query_builder', './resp
           this.$q = $q;
           this.backendSrv = backendSrv;
           this.templateSrv = templateSrv;
-          // this.templateSrv.formatValue = formatMQEValue;
+          this.templateSrv.formatValue = formatMQEValue;
         }
 
         // Called once per panel (graph)
@@ -73,7 +73,8 @@ System.register(['lodash', 'app/core/utils/datemath', './query_builder', './resp
 
             var timeFrom = Math.ceil(dateMath.parse(options.range.from));
             var timeTo = Math.ceil(dateMath.parse(options.range.to));
-            var mqeQuery;
+            var mqeQuery, mqeQueryPromise;
+            var self = this;
 
             var queries = _.map(options.targets, function (target) {
               if (target.hide || target.rawQuery && !target.query) {
@@ -82,15 +83,26 @@ System.register(['lodash', 'app/core/utils/datemath', './query_builder', './resp
                 if (target.rawQuery) {
                   // Use raw query
                   mqeQuery = MQEQuery.addTimeRange(target.query, timeFrom, timeTo);
+
+                  // Return query in async manner
+                  mqeQueryPromise = _this.$q.when([mqeQuery]);
                 } else {
+
                   // Build query
                   var queryModel = new MQEQuery(target, _this.templateSrv, options.scopedVars);
-                  mqeQuery = queryModel.render(timeFrom, timeTo, options.interval);
+                  mqeQueryPromise = _this._mqe_explore('metrics').then(function (metrics) {
+                    return queryModel.render(metrics, timeFrom, timeTo, options.interval);
+                  });
                 }
 
-                mqeQuery = _this.templateSrv.replace(mqeQuery);
-                return _this._mqe_query(mqeQuery).then(function (response) {
-                  return response_handler.handle_response(target, response);
+                return mqeQueryPromise.then(function (mqeQueries) {
+                  var queryPromises = _.map(mqeQueries, function (mqeQuery) {
+                    mqeQuery = self.templateSrv.replace(mqeQuery);
+                    return self._mqe_query(mqeQuery).then(function (response) {
+                      return response_handler.handle_response(target, response);
+                    });
+                  });
+                  return self.$q.all(queryPromises);
                 });
               }
             });
@@ -124,13 +136,26 @@ System.register(['lodash', 'app/core/utils/datemath', './query_builder', './resp
             }
 
             query = this.templateSrv.replace(query);
-            return this._mqe_query(query).then(function (response) {
-              return _.map(_.flatten(response.rows), function (row) {
+            return this._mqe_explore(query).then(function (result) {
+              return _.map(result, function (metric) {
                 return {
-                  text: row,
-                  value: "'" + row + "'"
+                  text: metric,
+                  value: metric
                 };
               });
+            });
+          }
+        }, {
+          key: '_mqe_explore',
+          value: function _mqe_explore(query) {
+            return this.backendSrv.datasourceRequest({
+              url: this.url + '/token/',
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            }).then(function (response) {
+              return response_handler.handle_explore_response(query, response.data);
             });
           }
         }, {

@@ -11,6 +11,18 @@ System.register(["lodash"], function (_export, _context) {
     }
   }
 
+  function containsWildcard(str) {
+    var wildcardRegex = /\*/;
+    return wildcardRegex.test(str);
+  }
+
+  function filterMetrics(str, metrics) {
+    var filterRegex = new RegExp(str.replace('*', '.*'), 'g');
+    return _.filter(metrics, function (metric) {
+      return filterRegex.test(metric);
+    });
+  }
+
   function trim(str) {
     var trimRegex = /^[\s]*(.*?)[\s]*$/;
     var match = str.match(trimRegex);
@@ -57,15 +69,40 @@ System.register(["lodash"], function (_export, _context) {
 
         _createClass(MQEQuery, [{
           key: "render",
-          value: function render(timeFrom, timeTo, interval) {
+          value: function render(metricList, timeFrom, timeTo, interval) {
             var target = this.target;
-            var query = "";
-            query += target.metric;
-            if (target.whereClauses.length) {
-              query += " where " + this.renderWhereClauses(target.whereClauses);
+            var metric = this.target.metric;
+            var metrics = [];
+            if (containsWildcard(metric)) {
+              metrics = filterMetrics(metric, metricList);
+            } else {
+              metrics = [metric];
             }
-            query = MQEQuery.addTimeRange(query, timeFrom, timeTo);
-            return query;
+            return _.map(metrics, function (metric) {
+              var query = "";
+              query += metric;
+
+              // Render apps and hosts
+              if (target.apps.length || target.hosts.length) {
+                query += " where ";
+                if (target.apps.length) {
+                  query += "app in (" + _.map(target.apps, function (app) {
+                    return "'" + app + "'";
+                  }).join(', ') + ")";
+                  if (target.hosts.length) {
+                    query += " and ";
+                  }
+                }
+                if (target.hosts.length) {
+                  query += "host in (" + _.map(target.hosts, function (host) {
+                    return "'" + host + "'";
+                  }).join(', ') + ")";
+                }
+              }
+
+              query = MQEQuery.addTimeRange(query, timeFrom, timeTo);
+              return query;
+            });
           }
         }, {
           key: "renderWhereClauses",

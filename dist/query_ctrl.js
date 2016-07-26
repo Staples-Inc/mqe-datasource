@@ -77,22 +77,26 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
           _this.uiSegmentSrv = uiSegmentSrv;
           _this.templateSrv = templateSrv;
 
-          _this.operators = ['=', '!=', 'in', 'match'];
-          _this.whereSegments = [];
-
           var target_defaults = {
             rawQuery: "",
-            whereClauses: []
+            apps: [],
+            hosts: []
           };
           _.defaults(_this.target, target_defaults);
 
-          _this.buildWhereSegments(_this.target.whereClauses);
-          _this.removeWhereSegment = uiSegmentSrv.newSegment({ fake: true, value: '-- remove --' });
+          _this.appSegments = _.map(_this.target.apps, _this.uiSegmentSrv.newSegment);
+          _this.hostSegments = _.map(_this.target.hosts, _this.uiSegmentSrv.newSegment);
+          _this.removeSegment = uiSegmentSrv.newSegment({ fake: true, value: '-- remove --' });
+          _this.fixSegments(_this.appSegments);
+          _this.fixSegments(_this.hostSegments);
 
           // bs-typeahead can't work with async code so we need to
           // store metrics first.
           _this.availableMetrics = [];
           _this.updateMetrics();
+          // Pass this to getMetrics() function, because it's called from bs-typeahead
+          // without proper context.
+          _this.getMetrics = _.bind(_this.getMetrics, _this);
           return _this;
         }
 
@@ -104,10 +108,15 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
             });
           }
         }, {
+          key: 'exploreMetrics',
+          value: function exploreMetrics(query) {
+            return this.datasource._mqe_explore(query);
+          }
+        }, {
           key: 'updateMetrics',
           value: function updateMetrics() {
             var self = this;
-            this.invokeMQEQuery(MQEQuery.getMetrics()).then(function (metrics) {
+            this.exploreMetrics('metrics').then(function (metrics) {
               self.availableMetrics = metrics;
             });
           }
@@ -127,43 +136,65 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
             return this.target.rawQuery;
           }
         }, {
-          key: 'whereSegmentUpdated',
-          value: function whereSegmentUpdated(segment, index) {
-            this.whereSegments[index] = segment;
+          key: 'appSegmentChanged',
+          value: function appSegmentChanged(segment, index) {
+            var _this2 = this;
 
-            if (segment.value === this.removeWhereSegment.value) {
-              this.whereSegments.splice(index, 3);
-              if (this.whereSegments.length === 0) {
-                this.whereSegments.push(this.uiSegmentSrv.newPlusButton());
-              } else if (this.whereSegments.length > 2) {
-                this.whereSegments.splice(Math.max(index - 1, 0), 1);
-                if (this.whereSegments[this.whereSegments.length - 1].type !== 'plus-button') {
-                  this.whereSegments.push(this.uiSegmentSrv.newPlusButton());
-                }
+            if (segment.type === 'plus-button') {
+              segment.type = undefined;
+            }
+            this.target.apps = _.map(_.filter(this.appSegments, function (segment) {
+              return segment.type !== 'plus-button' && segment.value !== _this2.removeSegment.value;
+            }), 'value');
+            this.appSegments = _.map(this.target.apps, this.uiSegmentSrv.newSegment);
+            this.appSegments.push(this.uiSegmentSrv.newPlusButton());
+            this.onChangeInternal();
+          }
+        }, {
+          key: 'hostSegmentChanged',
+          value: function hostSegmentChanged(segment, index) {
+            var _this3 = this;
+
+            if (segment.type === 'plus-button') {
+              segment.type = undefined;
+            }
+            this.target.hosts = _.map(_.filter(this.hostSegments, function (segment) {
+              return segment.type !== 'plus-button' && segment.value !== _this3.removeSegment.value;
+            }), 'value');
+            this.hostSegments = _.map(this.target.hosts, this.uiSegmentSrv.newSegment);
+            this.hostSegments.push(this.uiSegmentSrv.newPlusButton());
+            this.onChangeInternal();
+          }
+        }, {
+          key: 'getMetrics',
+          value: function getMetrics() {
+            var metrics = this.availableMetrics;
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
+
+            try {
+              for (var _iterator = this.templateSrv.variables[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                var variable = _step.value;
+
+                metrics.unshift('$' + variable.name);
               }
-            } else {
-              if (segment.type === 'plus-button') {
-                if (index > 2) {
-                  this.whereSegments.splice(index, 0, this.uiSegmentSrv.newCondition('AND'));
+            } catch (err) {
+              _didIteratorError = true;
+              _iteratorError = err;
+            } finally {
+              try {
+                if (!_iteratorNormalCompletion && _iterator.return) {
+                  _iterator.return();
                 }
-                this.whereSegments.push(this.uiSegmentSrv.newOperator('='));
-                this.whereSegments.push(this.uiSegmentSrv.newFake('select tag value', 'value', 'query-segment-value'));
-                segment.type = 'key';
-                segment.cssClass = 'query-segment-key';
-              }
-              if (index + 1 === this.whereSegments.length) {
-                this.whereSegments.push(this.uiSegmentSrv.newPlusButton());
+              } finally {
+                if (_didIteratorError) {
+                  throw _iteratorError;
+                }
               }
             }
 
-            this.buildWhereClauses();
-
-            // Refresh only if all fields setted
-            if (_.every(this.whereSegments, function (segment) {
-              return (segment.value || segment.type === 'plus-button') && !(segment.fake && segment.type !== 'plus-button');
-            })) {
-              this.panelCtrl.refresh();
-            }
+            return metrics;
           }
         }, {
           key: 'describeMetric',
@@ -172,115 +203,61 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
             return this.invokeMQEQuery(describeQuery);
           }
         }, {
-          key: 'getColumns',
-          value: function getColumns(metric) {
-            var self = this;
-            return this.describeMetric(metric).then(function (result) {
-              return self.transformToSegments(_.keys(result), true);
-            });
-          }
-        }, {
-          key: 'getValues',
-          value: function getValues(metric, column) {
-            var self = this;
-            return this.describeMetric(metric).then(function (result) {
-              return self.transformToSegments(result[column], true);
-            });
-          }
-        }, {
-          key: 'getColumnsOrValues',
-          value: function getColumnsOrValues(segment, index) {
-            var metric = this.target.metric;
-            var self = this;
-            if (segment.type === 'condition') {
-              return this.$q.when([this.uiSegmentSrv.newSegment('AND'), this.uiSegmentSrv.newSegment('OR')]);
-            }
-            if (segment.type === 'operator') {
-              return this.$q.when(this.uiSegmentSrv.newOperators(this.operators));
-            }
+          key: 'getApps',
+          value: function getApps() {
+            var _this4 = this;
 
-            if (segment.type === 'key' || segment.type === 'plus-button') {
-              return this.getColumns(metric).then(function (columns) {
-                columns.splice(0, 0, angular.copy(self.removeWhereSegment));
-                return columns;
-              });
-            } else if (segment.type === 'value') {
-              return this.getValues(metric, this.whereSegments[index - 2].value);
-            }
-          }
-        }, {
-          key: 'buildWhereSegments',
-          value: function buildWhereSegments(whereClauses) {
-            var self = this;
-            _.forEach(whereClauses, function (whereClause) {
-              if (whereClause.condition) {
-                self.whereSegments.push(self.uiSegmentSrv.newCondition(whereClause.condition));
-              }
-              self.whereSegments.push(self.uiSegmentSrv.newKey(whereClause.column));
-              self.whereSegments.push(self.uiSegmentSrv.newOperator(whereClause.operator));
-              self.whereSegments.push(self.uiSegmentSrv.newKeyValue(whereClause.value));
+            return this.exploreMetrics('apps').then(function (apps) {
+              var segments = _this4.transformToSegments(apps, true);
+              segments.splice(0, 0, angular.copy(_this4.removeSegment));
+              return segments;
             });
-            this.fixSegments(this.whereSegments);
           }
         }, {
-          key: 'buildWhereClauses',
-          value: function buildWhereClauses() {
-            var i = 0;
-            var whereIndex = 0;
-            var segments = this.whereSegments;
-            var whereClauses = [];
-            while (segments.length > i && segments[i].type !== 'plus-button') {
-              if (whereClauses.length < whereIndex + 1) {
-                whereClauses.push({ condition: '', column: '', operator: '', value: '' });
-              }
-              if (segments[i].type === 'condition') {
-                whereClauses[whereIndex].condition = segments[i].value;
-              } else if (segments[i].type === 'key') {
-                whereClauses[whereIndex].column = segments[i].value;
-              } else if (segments[i].type === 'operator') {
-                whereClauses[whereIndex].operator = segments[i].value;
-              } else if (segments[i].type === 'value') {
-                whereClauses[whereIndex].value = segments[i].value;
-                whereIndex++;
-              }
-              i++;
-            }
-            this.target.whereClauses = whereClauses;
+          key: 'getHosts',
+          value: function getHosts() {
+            var _this5 = this;
+
+            return this.exploreMetrics('hosts').then(function (hosts) {
+              var segments = _this5.transformToSegments(hosts, true);
+              segments.splice(0, 0, angular.copy(_this5.removeSegment));
+              return segments;
+            });
           }
         }, {
           key: 'transformToSegments',
           value: function transformToSegments(results, addTemplateVars) {
-            var _this2 = this;
+            var _this6 = this;
 
             var segments = _.map(_.flatten(results), function (value) {
-              return _this2.uiSegmentSrv.newSegment({
+              return _this6.uiSegmentSrv.newSegment({
                 value: value.toString(),
                 expandable: false
               });
             });
 
             if (addTemplateVars) {
-              var _iteratorNormalCompletion = true;
-              var _didIteratorError = false;
-              var _iteratorError = undefined;
+              var _iteratorNormalCompletion2 = true;
+              var _didIteratorError2 = false;
+              var _iteratorError2 = undefined;
 
               try {
-                for (var _iterator = this.templateSrv.variables[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                  var variable = _step.value;
+                for (var _iterator2 = this.templateSrv.variables[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                  var variable = _step2.value;
 
                   segments.unshift(this.uiSegmentSrv.newSegment({ type: 'template', value: '$' + variable.name, expandable: true }));
                 }
               } catch (err) {
-                _didIteratorError = true;
-                _iteratorError = err;
+                _didIteratorError2 = true;
+                _iteratorError2 = err;
               } finally {
                 try {
-                  if (!_iteratorNormalCompletion && _iterator.return) {
-                    _iterator.return();
+                  if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                    _iterator2.return();
                   }
                 } finally {
-                  if (_didIteratorError) {
-                    throw _iteratorError;
+                  if (_didIteratorError2) {
+                    throw _iteratorError2;
                   }
                 }
               }

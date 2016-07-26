@@ -34,6 +34,37 @@ System.register(['lodash'], function (_export, _context) {
       }
 
       _export('handle_response', handle_response);
+
+      function handle_explore_response(query, response) {
+
+        function getTagset(response) {
+          var tags = {};
+          _.forEach(response.body['tagset'], function (tagset) {
+            _.forEach(tagset, function (tagValue, tag) {
+              if (!tags[tag]) {
+                tags[tag] = [];
+              }
+              tags[tag].push(tagValue);
+            });
+          });
+          _.forEach(tags, function (tagValue, tag) {
+            tags[tag] = _.uniq(_.flatten(tagValue));
+          });
+          return tags;
+        }
+
+        if (query === 'tagset') {
+          return getTagset(response);
+        } else if (query === 'apps') {
+          return getTagset(response)['App'];
+        } else if (query === 'hosts') {
+          return getTagset(response)['Hosts'];
+        } else {
+          return response.body[query];
+        }
+      }
+
+      _export('handle_explore_response', handle_explore_response);
     }
   };
 });
