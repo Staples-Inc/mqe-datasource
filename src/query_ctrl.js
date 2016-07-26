@@ -97,7 +97,8 @@ export class MQEQueryCtrl extends QueryCtrl {
   ///////////////////////
 
   getMetrics() {
-    var metrics = this.availableMetrics;
+    // Don't touch original metric list
+    var metrics = _.clone(this.availableMetrics);
     for (let variable of this.templateSrv.variables) {
       metrics.unshift('$' + variable.name);
     }
