@@ -168,7 +168,8 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
         }, {
           key: 'getMetrics',
           value: function getMetrics() {
-            var metrics = this.availableMetrics;
+            // Don't touch original metric list
+            var metrics = _.clone(this.availableMetrics);
             var _iteratorNormalCompletion = true;
             var _didIteratorError = false;
             var _iteratorError = undefined;
