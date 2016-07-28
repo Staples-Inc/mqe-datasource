@@ -15,6 +15,7 @@ export class MQEQueryCtrl extends QueryCtrl {
 
     var target_defaults = {
       rawQuery: "",
+      metrics: [{metric: ""}],
       apps: [],
       hosts: []
     };
@@ -89,6 +90,16 @@ export class MQEQueryCtrl extends QueryCtrl {
     }), 'value');
     this.hostSegments = _.map(this.target.hosts, this.uiSegmentSrv.newSegment);
     this.hostSegments.push(this.uiSegmentSrv.newPlusButton());
+    this.onChangeInternal();
+  }
+
+  addMetric() {
+    this.target.metrics.push({metric: ""});
+    this.onChangeInternal();
+  }
+
+  removeMetric(index) {
+    this.target.metrics.splice(index, 1);
     this.onChangeInternal();
   }
 

@@ -15,38 +15,51 @@ export default class MQEQuery {
 
   render(metricList, timeFrom, timeTo, interval) {
     let target = this.target;
-    let metric = this.target.metric;
     let metrics = [];
-    if (containsWildcard(metric)) {
-      metrics = filterMetrics(metric, metricList);
-    } else {
-      metrics = [metric];
+
+    for (let m of target.metrics) {
+      let metric = m.metric;
+      if (metric) {
+        if (containsWildcard(metric)) {
+          metrics = metrics.concat(filterMetrics(metric, metricList));
+        } else {
+          metrics = metrics.concat(metric);
+        }
+      }
     }
+    metrics = _.uniq(metrics);
+
     return _.map(metrics, metric => {
       let query = "";
       query += metric;
 
       // Render apps and hosts
-      if (target.apps.length || target.hosts.length) {
-        query += " where ";
-        if (target.apps.length) {
-          query += "app in (" + _.map(target.apps, app => {
-            return "'" + app + "'";
-          }).join(', ') + ")";
-          if (target.hosts.length)  {
-            query += " and ";
-          }
-        }
-        if (target.hosts.length) {
-          query += "host in (" + _.map(target.hosts, host => {
-            return "'" + host + "'";
-          }).join(', ') + ")";
-        }
-      }
+      query += this.renderWhere(target.apps, target.hosts);
 
       query = MQEQuery.addTimeRange(query, timeFrom, timeTo);
       return query;
     });
+  }
+
+  renderWhere(apps, hosts) {
+    let query = "";
+    if (apps.length || hosts.length) {
+      query += " where ";
+      if (apps.length) {
+        query += "app in (" + _.map(apps, app => {
+          return "'" + app + "'";
+        }).join(', ') + ")";
+        if (hosts.length)  {
+          query += " and ";
+        }
+      }
+      if (hosts.length) {
+        query += "host in (" + _.map(hosts, host => {
+          return "'" + host + "'";
+        }).join(', ') + ")";
+      }
+    }
+    return query;
   }
 
   renderWhereClauses(whereClauses) {
