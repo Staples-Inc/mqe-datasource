@@ -34,6 +34,11 @@ export class MQEQueryCtrl extends QueryCtrl {
     // Pass this to getMetrics() function, because it's called from bs-typeahead
     // without proper context.
     this.getMetrics = _.bind(this.getMetrics, this);
+
+    // Update panel when metric selected from dropdown
+    $scope.$on('typeahead-updated', () => {
+      this.onChangeInternal();
+    });
   }
 
   invokeMQEQuery(query) {
