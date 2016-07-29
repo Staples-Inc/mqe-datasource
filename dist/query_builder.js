@@ -70,44 +70,82 @@ System.register(["lodash"], function (_export, _context) {
         _createClass(MQEQuery, [{
           key: "render",
           value: function render(metricList, timeFrom, timeTo, interval) {
+            var _this = this;
+
             var target = this.target;
-            var metric = this.target.metric;
             var metrics = [];
-            if (containsWildcard(metric)) {
-              metrics = filterMetrics(metric, metricList);
-            } else {
-              metrics = [metric];
+
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
+
+            try {
+              for (var _iterator = target.metrics[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                var m = _step.value;
+
+                var metric = m.metric;
+                if (metric) {
+                  if (containsWildcard(metric)) {
+                    metrics = metrics.concat(filterMetrics(metric, metricList));
+                  } else {
+                    metrics = metrics.concat(metric);
+                  }
+                }
+              }
+            } catch (err) {
+              _didIteratorError = true;
+              _iteratorError = err;
+            } finally {
+              try {
+                if (!_iteratorNormalCompletion && _iterator.return) {
+                  _iterator.return();
+                }
+              } finally {
+                if (_didIteratorError) {
+                  throw _iteratorError;
+                }
+              }
             }
+
+            metrics = _.uniq(metrics);
+
             return _.map(metrics, function (metric) {
               var query = "";
               query += metric;
 
               // Render apps and hosts
-              if (target.apps.length || target.hosts.length) {
-                query += " where ";
-                if (target.apps.length) {
-                  query += "app in (" + _.map(target.apps, function (app) {
-                    return "'" + app + "'";
-                  }).join(', ') + ")";
-                  if (target.hosts.length) {
-                    query += " and ";
-                  }
-                }
-                if (target.hosts.length) {
-                  query += "host in (" + _.map(target.hosts, function (host) {
-                    return "'" + host + "'";
-                  }).join(', ') + ")";
-                }
-              }
+              query += _this.renderWhere(target.apps, target.hosts);
 
               query = MQEQuery.addTimeRange(query, timeFrom, timeTo);
               return query;
             });
           }
         }, {
+          key: "renderWhere",
+          value: function renderWhere(apps, hosts) {
+            var query = "";
+            if (apps.length || hosts.length) {
+              query += " where ";
+              if (apps.length) {
+                query += "app in (" + _.map(apps, function (app) {
+                  return "'" + app + "'";
+                }).join(', ') + ")";
+                if (hosts.length) {
+                  query += " and ";
+                }
+              }
+              if (hosts.length) {
+                query += "host in (" + _.map(hosts, function (host) {
+                  return "'" + host + "'";
+                }).join(', ') + ")";
+              }
+            }
+            return query;
+          }
+        }, {
           key: "renderWhereClauses",
           value: function renderWhereClauses(whereClauses) {
-            var _this = this;
+            var _this2 = this;
 
             var renderedClauses = _.map(whereClauses, function (clauseObj, index) {
               var rendered = "";
@@ -117,7 +155,7 @@ System.register(["lodash"], function (_export, _context) {
 
               // Put non-numeric values into quotes.
               var value;
-              if (_.isNumber(clauseObj.value) || _this.containsVariable(clauseObj.value)) {
+              if (_.isNumber(clauseObj.value) || _this2.containsVariable(clauseObj.value)) {
                 value = clauseObj.value;
               } else {
                 value = "'" + clauseObj.value + "'";

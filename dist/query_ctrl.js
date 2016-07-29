@@ -79,6 +79,7 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
 
           var target_defaults = {
             rawQuery: "",
+            metrics: [{ metric: "" }],
             apps: [],
             hosts: []
           };
@@ -97,6 +98,11 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
           // Pass this to getMetrics() function, because it's called from bs-typeahead
           // without proper context.
           _this.getMetrics = _.bind(_this.getMetrics, _this);
+
+          // Update panel when metric selected from dropdown
+          $scope.$on('typeahead-updated', function () {
+            _this.onChangeInternal();
+          });
           return _this;
         }
 
@@ -163,6 +169,18 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
             }), 'value');
             this.hostSegments = _.map(this.target.hosts, this.uiSegmentSrv.newSegment);
             this.hostSegments.push(this.uiSegmentSrv.newPlusButton());
+            this.onChangeInternal();
+          }
+        }, {
+          key: 'addMetric',
+          value: function addMetric() {
+            this.target.metrics.push({ metric: "" });
+            this.onChangeInternal();
+          }
+        }, {
+          key: 'removeMetric',
+          value: function removeMetric(index) {
+            this.target.metrics.splice(index, 1);
             this.onChangeInternal();
           }
         }, {
