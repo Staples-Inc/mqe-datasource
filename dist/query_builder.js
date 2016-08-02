@@ -17,9 +17,10 @@ System.register(["lodash"], function (_export, _context) {
   }
 
   function filterMetrics(str, metrics) {
+    str = str.replace(/\./g, '\\\.');
     var filterRegex = new RegExp(str.replace('*', '.*'), 'g');
     return _.filter(metrics, function (metric) {
-      return filterRegex.test(metric);
+      return metric.search(filterRegex) !== -1;
     });
   }
 
