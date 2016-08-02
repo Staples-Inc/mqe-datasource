@@ -120,9 +120,10 @@ function containsWildcard(str) {
 }
 
 function filterMetrics(str, metrics) {
+  str = str.replace(/\./g, '\\\.');
   var filterRegex = new RegExp(str.replace('*', '.*'), 'g');
   return _.filter(metrics, metric => {
-    return filterRegex.test(metric);
+    return metric.search(filterRegex) !== -1;
   });
 }
 
