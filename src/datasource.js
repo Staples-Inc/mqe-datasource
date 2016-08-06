@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import * as dateMath from 'app/core/utils/datemath';
+import moment from 'moment';
 import MQEQuery from './query_builder';
 import * as response_handler from './response_handler';
 
@@ -13,6 +14,11 @@ export class MQEDatasource {
     this.backendSrv = backendSrv;
     this.templateSrv = templateSrv;
     this.templateSrv.formatValue = formatMQEValue;
+
+    // Default is 10 minutes
+    let cacheTTL =  instanceSettings.jsonData.cacheTTL || '10m';
+    this.cacheTTL = parseInterval(cacheTTL);
+    this.cache = {};
   }
 
   // Called once per panel (graph)
@@ -96,14 +102,30 @@ export class MQEDatasource {
   // Invoke GET request to /token endpoint and returns list of metrics.
   // For Staples only.
   _mqe_explore(query) {
-    return this.backendSrv.datasourceRequest({
-      url: this.url + '/token/',
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then(response => {
-      return response_handler.handle_explore_response(query, response.data);
+    let tokenRequest;
+
+    if (!this.cache.token ||
+        Date.now() - this.cache.token.timestamp > this.cacheTTL) {
+
+      tokenRequest = this.backendSrv.datasourceRequest({
+        url: this.url + '/token/',
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }).then(response => {
+        this.cache.token = {
+          timestamp: Date.now(),
+          value: response.data
+        };
+        return response.data;
+      });
+    } else {
+      tokenRequest = this.$q.when(this.cache.token.value);
+    }
+
+    return tokenRequest.then(result => {
+      return response_handler.handle_explore_response(query, result);
     });
   }
 
@@ -134,4 +156,10 @@ function formatMQEValue(value, format, variable) {
     return value;
   }
   return value.join("', '");
+}
+
+function parseInterval(interval) {
+  var intervalPattern = /(^[\d]+)(y|M|w|d|h|m|s)/g;
+  var momentInterval = intervalPattern.exec(interval);
+  return moment.duration(Number(momentInterval[1]), momentInterval[2]).valueOf();
 }
