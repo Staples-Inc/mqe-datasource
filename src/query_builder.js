@@ -21,8 +21,26 @@ export default class MQEQuery {
       let metric = m.metric;
       if (metric) {
         if (containsWildcard(metric)) {
-          metrics = metrics.concat(filterMetrics(metric, metricList));
+          let filteredMetrics = filterMetrics(metric, metricList);
+
+          // Add alias
+          if (m.alias) {
+            if (containsWildcard(m.alias)) {
+              // Set whildcard part as metric alias
+              // query: os.cpu.* alias: * -> metric: os.cpu.system -> alias: system
+              filteredMetrics = _.map(filteredMetrics, _.partial(getMetricSuffix, metric));
+            } else {
+              filteredMetrics = _.map(filteredMetrics, _.partial(addMQEAlias, m.alias));
+            }
+          }
+
+          metrics = metrics.concat(filteredMetrics);
         } else {
+          // Add alias
+          if (m.alias) {
+            metric = addMQEAlias(m.alias, metric);
+          }
+
           metrics = metrics.concat(metric);
         }
       }
@@ -131,4 +149,15 @@ function trim(str) {
   var trimRegex = /^[\s]*(.*?)[\s]*$/;
   var match = str.match(trimRegex);
   return match ? match[0] : match;
+}
+
+function getMetricSuffix(metricQuery, metric) {
+  let metricPrefix = metricQuery.replace(/\./g, '\\\.');
+  let suffixRegex = new RegExp(metricPrefix.replace('*', '(.*)'));
+  let suffix = suffixRegex.exec(metric);
+  return addMQEAlias(suffix[1], metric);
+}
+
+function addMQEAlias(alias, metric) {
+  return metric + " {" + alias + "}";
 }
