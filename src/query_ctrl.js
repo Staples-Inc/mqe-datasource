@@ -17,7 +17,9 @@ export class MQEQueryCtrl extends QueryCtrl {
       rawQuery: "",
       metrics: [{metric: ""}],
       apps: [],
-      hosts: []
+      hosts: [],
+      addAppToAlias: true,
+      addHostToAlias: true
     };
     _.defaults(this.target, target_defaults);
 
