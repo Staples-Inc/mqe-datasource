@@ -21,7 +21,12 @@ System.register(['lodash'], function (_export, _context) {
             });
 
             var metric_prefix = _.map(series.tagset, function (value, key) {
-              return value;
+              // Use !== false for backward compatibility
+              if (key === 'app' && target.addAppToAlias !== false || key === 'host' && target.addHostToAlias !== false) {
+                return value;
+              } else {
+                return '';
+              }
             }).join(' ');
 
             return {

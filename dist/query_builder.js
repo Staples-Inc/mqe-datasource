@@ -29,6 +29,17 @@ System.register(["lodash"], function (_export, _context) {
     var match = str.match(trimRegex);
     return match ? match[0] : match;
   }
+
+  function getMetricSuffix(metricQuery, metric) {
+    var metricPrefix = metricQuery.replace(/\./g, '\\\.');
+    var suffixRegex = new RegExp(metricPrefix.replace('*', '(.*)'));
+    var suffix = suffixRegex.exec(metric);
+    return addMQEAlias(suffix[1], metric);
+  }
+
+  function addMQEAlias(alias, metric) {
+    return metric + " {" + alias + "}";
+  }
   return {
     setters: [function (_lodash) {
       _ = _lodash.default;
@@ -87,8 +98,26 @@ System.register(["lodash"], function (_export, _context) {
                 var metric = m.metric;
                 if (metric) {
                   if (containsWildcard(metric)) {
-                    metrics = metrics.concat(filterMetrics(metric, metricList));
+                    var filteredMetrics = filterMetrics(metric, metricList);
+
+                    // Add alias
+                    if (m.alias) {
+                      if (containsWildcard(m.alias)) {
+                        // Set whildcard part as metric alias
+                        // query: os.cpu.* alias: * -> metric: os.cpu.system -> alias: system
+                        filteredMetrics = _.map(filteredMetrics, _.partial(getMetricSuffix, metric));
+                      } else {
+                        filteredMetrics = _.map(filteredMetrics, _.partial(addMQEAlias, m.alias));
+                      }
+                    }
+
+                    metrics = metrics.concat(filteredMetrics);
                   } else {
+                    // Add alias
+                    if (m.alias) {
+                      metric = addMQEAlias(m.alias, metric);
+                    }
+
                     metrics = metrics.concat(metric);
                   }
                 }

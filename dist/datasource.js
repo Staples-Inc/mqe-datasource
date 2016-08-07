@@ -1,9 +1,9 @@
 'use strict';
 
-System.register(['lodash', 'app/core/utils/datemath', './query_builder', './response_handler'], function (_export, _context) {
+System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder', './response_handler'], function (_export, _context) {
   "use strict";
 
-  var _, dateMath, MQEQuery, response_handler, _createClass, MQEDatasource;
+  var _, dateMath, moment, MQEQuery, response_handler, _createClass, MQEDatasource;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -21,11 +21,19 @@ System.register(['lodash', 'app/core/utils/datemath', './query_builder', './resp
     }
     return value.join("', '");
   }
+
+  function parseInterval(interval) {
+    var intervalPattern = /(^[\d]+)(y|M|w|d|h|m|s)/g;
+    var momentInterval = intervalPattern.exec(interval);
+    return moment.duration(Number(momentInterval[1]), momentInterval[2]).valueOf();
+  }
   return {
     setters: [function (_lodash) {
       _ = _lodash.default;
     }, function (_appCoreUtilsDatemath) {
       dateMath = _appCoreUtilsDatemath;
+    }, function (_moment) {
+      moment = _moment.default;
     }, function (_query_builder) {
       MQEQuery = _query_builder.default;
     }, function (_response_handler) {
@@ -61,6 +69,11 @@ System.register(['lodash', 'app/core/utils/datemath', './query_builder', './resp
           this.backendSrv = backendSrv;
           this.templateSrv = templateSrv;
           this.templateSrv.formatValue = formatMQEValue;
+
+          // Default is 10 minutes
+          var cacheTTL = instanceSettings.jsonData.cacheTTL || '10m';
+          this.cacheTTL = parseInterval(cacheTTL);
+          this.cache = {};
         }
 
         // Called once per panel (graph)
@@ -148,14 +161,25 @@ System.register(['lodash', 'app/core/utils/datemath', './query_builder', './resp
         }, {
           key: '_mqe_explore',
           value: function _mqe_explore(query) {
-            return this.backendSrv.datasourceRequest({
-              url: this.url + '/token/',
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            }).then(function (response) {
-              return response_handler.handle_explore_response(query, response.data);
+            var _this2 = this;
+
+            var tokenRequest = void 0;
+
+            if (!this.cache.token || Date.now() - this.cache.token.timestamp > this.cacheTTL) {
+
+              tokenRequest = this._get('/token/').then(function (response) {
+                _this2.cache.token = {
+                  timestamp: Date.now(),
+                  value: response.data
+                };
+                return response.data;
+              });
+            } else {
+              tokenRequest = this.$q.when(this.cache.token.value);
+            }
+
+            return tokenRequest.then(function (result) {
+              return response_handler.handle_explore_response(query, result);
             });
           }
         }, {
@@ -164,15 +188,31 @@ System.register(['lodash', 'app/core/utils/datemath', './query_builder', './resp
             var mqe_query = {
               query: query
             };
+            return this._post('/query/', mqe_query).then(function (response) {
+              return response.data;
+            });
+          }
+        }, {
+          key: '_get',
+          value: function _get(url) {
             return this.backendSrv.datasourceRequest({
-              url: this.url + '/query/',
-              data: mqe_query,
+              url: this.url + url,
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+          }
+        }, {
+          key: '_post',
+          value: function _post(url, data) {
+            return this.backendSrv.datasourceRequest({
+              url: this.url + url,
+              data: data,
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
               }
-            }).then(function (response) {
-              return response.data;
             });
           }
         }]);

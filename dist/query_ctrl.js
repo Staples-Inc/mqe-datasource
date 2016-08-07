@@ -81,7 +81,9 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
             rawQuery: "",
             metrics: [{ metric: "" }],
             apps: [],
-            hosts: []
+            hosts: [],
+            addAppToAlias: true,
+            addHostToAlias: true
           };
           _.defaults(_this.target, target_defaults);
 
