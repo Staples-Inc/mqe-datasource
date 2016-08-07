@@ -107,13 +107,7 @@ export class MQEDatasource {
     if (!this.cache.token ||
         Date.now() - this.cache.token.timestamp > this.cacheTTL) {
 
-      tokenRequest = this.backendSrv.datasourceRequest({
-        url: this.url + '/token/',
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }).then(response => {
+      tokenRequest = this._get('/token/').then(response => {
         this.cache.token = {
           timestamp: Date.now(),
           value: response.data
@@ -133,15 +127,29 @@ export class MQEDatasource {
     var mqe_query = {
       query: query
     };
+    return this._post('/query/', mqe_query).then(response => {
+      return response.data;
+    });
+  }
+
+  _get(url) {
     return this.backendSrv.datasourceRequest({
-      url: this.url + '/query/',
-      data: mqe_query,
+      url: this.url + url,
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  _post(url, data) {
+    return this.backendSrv.datasourceRequest({
+      url: this.url + url,
+      data: data,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       }
-    }).then(response => {
-      return response.data;
     });
   }
 
