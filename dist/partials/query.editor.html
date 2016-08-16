@@ -1,0 +1,96 @@
+<query-editor-row query-ctrl="ctrl" can-collapse="false" has-text-edit-mode="true">
+
+  <!-- Raw editor -->
+  <div class="gf-form" ng-if="ctrl.target.rawQuery">
+    <input type="text" class="gf-form-input"
+      ng-model="ctrl.target.query"
+      spellcheck="false"
+      bs-typeahead="ctrl.getMetrics"
+      data-min-length=0
+      data-items=8
+      ng-blur="ctrl.onChangeInternal()">
+    </input>
+  </div>
+
+  <!-- MQE query editor -->
+  <div ng-if="!ctrl.target.rawQuery">
+    <div class="gf-form-inline"
+      ng-repeat="metric in ctrl.target.metrics">
+      <div class="gf-form">
+        <input type="text" class="gf-form-input width-18"
+          ng-model="metric.metric"
+          spellcheck="false"
+          bs-typeahead="ctrl.getMetrics"
+          data-min-length=0
+          data-items=100
+          ng-blur="ctrl.onChangeInternal()">
+        </input>
+      </div>
+      <div class="gf-form">
+        <label class="gf-form-label query-keyword width-4">Alias</label>
+      </div>
+      <div class="gf-form">
+        <input type="text" class="gf-form-input width-12"
+          ng-model="metric.alias"
+          spellcheck="false"
+          ng-blur="ctrl.onChangeInternal()">
+        </input>
+      </div>
+      <div class="gf-form">
+        <label class="gf-form-label query-keyword width-7">Add to alias</label>
+      </div>
+      <div class="gf-form" ng-if="$first">
+        <gf-form-switch class="gf-form" label="App"
+          checked="ctrl.target.addAppToAlias"
+          on-change="ctrl.onChangeInternal()">
+        </gf-form-switch>
+      </div>
+      <div class="gf-form" ng-if="$first">
+        <gf-form-switch class="gf-form" label="Host"
+          checked="ctrl.target.addHostToAlias"
+          on-change="ctrl.onChangeInternal()">
+        </gf-form-switch>
+      </div>
+      <div class="gf-form gf-form--grow">
+        <div class="gf-form-label gf-form-label--grow"></div>
+      </div>
+      <div class="gf-form">
+        <label class="gf-form-label" ng-if="$first">
+          <a class="pointer" ng-click="ctrl.addMetric()">
+            <i class="fa fa-plus"></i>
+          </a>
+        </label>
+        <label class="gf-form-label" ng-if="ctrl.target.metrics.length > 1">
+          <a class="pointer" ng-click="ctrl.removeMetric($index)">
+            <i class="fa fa-minus"></i>
+          </a>
+        </label>
+      </div>
+    </div>
+
+    <div class="gf-form-inline">
+      <div class="gf-form">
+        <label class="gf-form-label query-keyword width-4">App</label>
+      </div>
+      <div class="gf-form" ng-repeat="segment in ctrl.appSegments">
+        <metric-segment segment="segment"
+          get-options="ctrl.getApps()"
+          on-change="ctrl.appSegmentChanged(segment, $index)">
+        </metric-segment>
+      </div>
+      <div class="gf-form">
+        <label class="gf-form-label query-keyword width-5">Host</label>
+      </div>
+      <div class="gf-form" ng-repeat="segment in ctrl.hostSegments">
+        <metric-segment segment="segment"
+          get-options="ctrl.getHosts()"
+          on-change="ctrl.hostSegmentChanged(segment, $index)">
+        </metric-segment>
+      </div>
+      <div class="gf-form gf-form--grow">
+        <div class="gf-form-label gf-form-label--grow"></div>
+      </div>
+    </div>
+  </div>
+
+</query-editor-row>
