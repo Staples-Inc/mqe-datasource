@@ -65,3 +65,11 @@ os.disk.sda.io_time -> sda
 os.disk.sdb.io_time -> sdb
 os.disk.sdc.io_time -> sdc
 ```
+
+### Templating
+Staples MQE data source supports template variables. To add template variable open _Templating_ and click _New_. Choose name for variable and go to _Query_. MQE data source supports 3 types of queries:
+  * Applications: `apps`
+  * Hosts: `hosts`
+  * Metrics: `metrics`
+
+Use _Regex_ field to filter returned values.
