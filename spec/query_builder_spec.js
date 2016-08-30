@@ -3,16 +3,16 @@ import MQEQuery from '../query_builder';
 describe('MQEQuery', function() {
   var ctx = {};
   var metricList = [
-    'os.cpu.all.user_percentage',
-    'os.cpu.all.system_percentage',
-    'os.cpu.all.active_percentage',
+    'os.cpu.all.user',
+    'os.cpu.all.system',
+    'os.cpu.all.active',
     'os.disk.sda.io_time',
     'os.disk.sdb.io_time',
     'os.disk.sdc.io_time'
   ];
   var target_template = {
     metrics: [
-      {metric: 'os.cpu.all.user_percentage'}
+      {metric: 'os.cpu.all.user'}
     ],
     alias: '',
     apps: [],
@@ -34,14 +34,14 @@ describe('MQEQuery', function() {
 
     it('should render proper MQE query', function(done) {
       var expected_query = [
-        "os.cpu.all.user_percentage from 1464130140000 to 1464130150000"
+        "os.cpu.all.user from 1464130140000 to 1464130150000"
       ];
       var result = ctx.query.render(metricList, ctx.timeFrom, ctx.timeTo, ctx.interval);
       expect(result).to.deep.equal(expected_query);
       done();
     });
 
-    it('should render proper MQE query when wildcard used', function(done) {
+    it('should render proper query when wildcard used', function(done) {
       var target = {
         metrics: [
           {metric: "os.cpu.all.*"}
@@ -49,15 +49,126 @@ describe('MQEQuery', function() {
         apps: [],
         hosts: []
       };
-      ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
 
       var expected_query = [
-        "os.cpu.all.user_percentage from 1464130140000 to 1464130150000",
-        "os.cpu.all.system_percentage from 1464130140000 to 1464130150000",
-        "os.cpu.all.active_percentage from 1464130140000 to 1464130150000",
+        "os.cpu.all.user from 1464130140000 to 1464130150000",
+        "os.cpu.all.system from 1464130140000 to 1464130150000",
+        "os.cpu.all.active from 1464130140000 to 1464130150000"
       ];
 
+      ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
       var result = ctx.query.render(metricList, ctx.timeFrom, ctx.timeTo, ctx.interval);
+
+      expect(result).to.deep.equal(expected_query);
+      done();
+    });
+
+    it('should render proper query when multiple metrics used', function(done) {
+      var target = {
+        metrics: [
+          {metric: "os.cpu.all.user"},
+          {metric: "os.cpu.all.system"}
+        ],
+        apps: [],
+        hosts: []
+      };
+
+      var expected_query = [
+        "os.cpu.all.user from 1464130140000 to 1464130150000",
+        "os.cpu.all.system from 1464130140000 to 1464130150000"
+      ];
+
+      ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
+      var result = ctx.query.render(metricList, ctx.timeFrom, ctx.timeTo, ctx.interval);
+
+      expect(result).to.deep.equal(expected_query);
+      done();
+    });
+
+    it('should add proper where clause when tags added', function(done) {
+      var target = {
+        metrics: [
+          {metric: "os.cpu.all.user"}
+        ],
+        apps: [],
+        hosts: []
+      };
+
+      target.hosts = ["host01", "host02"];
+      var expected_query = [
+        "os.cpu.all.user where host in ('host01', 'host02') from 1464130140000 to 1464130150000"
+      ];
+
+      ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
+      var result = ctx.query.render(metricList, ctx.timeFrom, ctx.timeTo, ctx.interval);
+      expect(result).to.deep.equal(expected_query);
+
+      target.hosts = ["host01"];
+      expected_query = [
+        "os.cpu.all.user where host in ('host01') from 1464130140000 to 1464130150000"
+      ];
+
+      ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
+      result = ctx.query.render(metricList, ctx.timeFrom, ctx.timeTo, ctx.interval);
+      expect(result).to.deep.equal(expected_query);
+
+      target.hosts = ["host01"];
+      target.apps = ["app1", "app2"];
+      expected_query = [
+        "os.cpu.all.user where app in ('app1', 'app2') and host in ('host01') from 1464130140000 to 1464130150000"
+      ];
+
+      ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
+      result = ctx.query.render(metricList, ctx.timeFrom, ctx.timeTo, ctx.interval);
+      expect(result).to.deep.equal(expected_query);
+
+      done();
+    });
+
+    it('should add alias if it set', function(done) {
+      var target = {
+        metrics: [
+          {
+            metric: "os.cpu.all.user",
+            alias: "user"
+          }
+        ],
+        apps: [],
+        hosts: []
+      };
+
+      var expected_query = [
+        "os.cpu.all.user {user} from 1464130140000 to 1464130150000"
+      ];
+
+      ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
+      var result = ctx.query.render(metricList, ctx.timeFrom, ctx.timeTo, ctx.interval);
+
+      expect(result).to.deep.equal(expected_query);
+      done();
+    });
+
+    it('should add multiple aliases if wildcard used', function(done) {
+      var target = {
+        metrics: [
+          {
+            metric: "os.cpu.all.*",
+            alias: "*"
+          }
+        ],
+        apps: [],
+        hosts: []
+      };
+
+      var expected_query = [
+        "os.cpu.all.user {user} from 1464130140000 to 1464130150000",
+        "os.cpu.all.system {system} from 1464130140000 to 1464130150000",
+        "os.cpu.all.active {active} from 1464130140000 to 1464130150000"
+      ];
+
+      ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
+      var result = ctx.query.render(metricList, ctx.timeFrom, ctx.timeTo, ctx.interval);
+
       expect(result).to.deep.equal(expected_query);
       done();
     });
