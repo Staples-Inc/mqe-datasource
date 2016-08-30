@@ -28,14 +28,20 @@ export default class MQEQuery {
             if (containsWildcard(m.alias)) {
               // Set whildcard part as metric alias
               // query: os.cpu.* alias: * -> metric: os.cpu.system -> alias: system
-              filteredMetrics = _.map(filteredMetrics, _.partial(getMetricSuffix, metric));
+              filteredMetrics = _.map(filteredMetrics,
+                _.partial(convertMetricWithWildcard, metric));
             } else {
-              filteredMetrics = _.map(filteredMetrics, _.partial(addMQEAlias, m.alias));
+              filteredMetrics = _.map(filteredMetrics,
+                _.compose(_.partial(addMQEAlias, m.alias), wrapMetric));
             }
+          } else {
+            filteredMetrics = _.map(filteredMetrics, wrapMetric);
           }
 
           metrics = metrics.concat(filteredMetrics);
         } else {
+          metric = wrapMetric(metric);
+
           // Add alias
           if (m.alias) {
             metric = addMQEAlias(m.alias, metric);
@@ -49,8 +55,7 @@ export default class MQEQuery {
 
     return _.map(metrics, metric => {
       let query = "";
-      //query += metric;
-        query +=  "`"+metric+"`" ;
+      query += metric;
 
       // Render apps and hosts
       query += this.renderWhere(target.apps, target.hosts);
@@ -140,7 +145,7 @@ function containsWildcard(str) {
 
 function filterMetrics(str, metrics) {
   str = str.replace(/\./g, '\\\.');
-  var filterRegex = new RegExp(str.replace('*', '.*'), 'g');
+  let filterRegex = new RegExp(str.replace('*', '.*'), 'g');
   return _.filter(metrics, metric => {
     return metric.search(filterRegex) !== -1;
   });
@@ -152,13 +157,23 @@ function trim(str) {
   return match ? match[0] : match;
 }
 
+function convertMetricWithWildcard(metricQuery, metric) {
+  let suffix = getMetricSuffix(metricQuery, metric);
+  return addMQEAlias(suffix, wrapMetric(metric));
+}
+
 function getMetricSuffix(metricQuery, metric) {
   let metricPrefix = metricQuery.replace(/\./g, '\\\.');
   let suffixRegex = new RegExp(metricPrefix.replace('*', '(.*)'));
   let suffix = suffixRegex.exec(metric);
-  return addMQEAlias(suffix[1], metric);
+  return suffix[1];
 }
 
 function addMQEAlias(alias, metric) {
   return metric + " {" + alias + "}";
+}
+
+// Wrap metric with ``: os.cpu.user -> `os.cpu.user`
+function wrapMetric(metric) {
+  return '`' + metric + '`';
 }
