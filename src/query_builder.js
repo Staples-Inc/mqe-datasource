@@ -49,7 +49,8 @@ export default class MQEQuery {
 
     return _.map(metrics, metric => {
       let query = "";
-      query += metric;
+      //query += metric;
+        query +=  "`"+metric+"`" ;
 
       // Render apps and hosts
       query += this.renderWhere(target.apps, target.hosts);
