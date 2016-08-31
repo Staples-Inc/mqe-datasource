@@ -19,7 +19,7 @@ export class MQEDatasource {
     let cacheTTL =  instanceSettings.jsonData.cacheTTL || '10m';
     this.cacheTTL = parseInterval(cacheTTL);
     this.cache = {};
-	
+
   }
 
   // Called once per panel (graph)
@@ -51,20 +51,15 @@ export class MQEDatasource {
 
         return mqeQueryPromise.then(mqeQueries => {
           var queryPromises = _.map(mqeQueries, mqeQuery => {
-            //mqeQuery = self.templateSrv.replace(mqeQuery);
-              if (typeof options.scopedVars == 'undefined') {
-            mqeQuery = self.templateSrv.replace(mqeQuery);
-        }
-        else {
             mqeQuery = self.templateSrv.replace(mqeQuery, options.scopedVars);
-        }
-        // added backticks for metrics in the query
-        var lastIndex = mqeQuery.lastIndexOf("`");
-        var slice = mqeQuery.slice(0, lastIndex);
-        var metricsPartQuery = slice.replace(/'/g, "`");
-        var remainingQuery = mqeQuery.substring(lastIndex, mqeQuery.length);
 
-        var mqeQueryRefined = metricsPartQuery+remainingQuery;
+            // added backticks for metrics in the query
+            var lastIndex = mqeQuery.lastIndexOf("`");
+            var slice = mqeQuery.slice(0, lastIndex);
+            var metricsPartQuery = slice.replace(/'/g, "`");
+            var remainingQuery = mqeQuery.substring(lastIndex, mqeQuery.length);
+
+            var mqeQueryRefined = metricsPartQuery+remainingQuery;
 
             return self._mqe_query(mqeQueryRefined).then(response => {
               return response_handler.handle_response(target, response);
