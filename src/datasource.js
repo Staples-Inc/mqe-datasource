@@ -53,15 +53,7 @@ export class MQEDatasource {
           var queryPromises = _.map(mqeQueries, mqeQuery => {
             mqeQuery = self.templateSrv.replace(mqeQuery, options.scopedVars);
 
-            // added backticks for metrics in the query
-            var lastIndex = mqeQuery.lastIndexOf("`");
-            var slice = mqeQuery.slice(0, lastIndex);
-            var metricsPartQuery = slice.replace(/'/g, "`");
-            var remainingQuery = mqeQuery.substring(lastIndex, mqeQuery.length);
-
-            var mqeQueryRefined = metricsPartQuery+remainingQuery;
-
-            return self._mqe_query(mqeQueryRefined).then(response => {
+            return self._mqe_query(mqeQuery).then(response => {
               return response_handler.handle_response(target, response);
             });
           });
@@ -173,7 +165,12 @@ function formatMQEValue(value, format, variable) {
   if (typeof value === 'string') {
     return value;
   }
-  return value.join("', '");
+    if (variable.query == 'metrics'){
+          return value.join("`, `");
+    }
+    else {
+          return value.join("', '");
+     }
 }
 
 function parseInterval(interval) {
