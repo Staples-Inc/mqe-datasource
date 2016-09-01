@@ -15,7 +15,7 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
   // Render multi-value variables for using in "IN" expression:
   // $host => ('backend01', 'backend02')
   // where host in $host => where host in ('backend01', 'backend02')
-  function formatMQEValue(value, format, variable) {
+  function formatMQETag(value, format, variable) {
     if (typeof value === 'string') {
       return value;
     }
@@ -68,7 +68,7 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
           this.$q = $q;
           this.backendSrv = backendSrv;
           this.templateSrv = templateSrv;
-          this.templateSrv.formatValue = formatMQEValue;
+          this.templateSrv.formatValue = formatMQETag;
 
           // Default is 10 minutes
           var cacheTTL = instanceSettings.jsonData.cacheTTL || '10m';
@@ -110,7 +110,8 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
 
                 return mqeQueryPromise.then(function (mqeQueries) {
                   var queryPromises = _.map(mqeQueries, function (mqeQuery) {
-                    mqeQuery = self.templateSrv.replace(mqeQuery);
+                    mqeQuery = self.templateSrv.replace(mqeQuery, options.scopedVars);
+
                     return self._mqe_query(mqeQuery).then(function (response) {
                       return response_handler.handle_response(target, response);
                     });

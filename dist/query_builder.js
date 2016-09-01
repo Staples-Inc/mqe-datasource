@@ -30,15 +30,40 @@ System.register(["lodash"], function (_export, _context) {
     return match ? match[0] : match;
   }
 
+  function convertMetricWithWildcard(metricQuery, metric) {
+    var suffix = getMetricSuffix(metricQuery, metric);
+    return addMQEAlias(suffix, wrapMetric(metric));
+  }
+
   function getMetricSuffix(metricQuery, metric) {
     var metricPrefix = metricQuery.replace(/\./g, '\\\.');
     var suffixRegex = new RegExp(metricPrefix.replace('*', '(.*)'));
     var suffix = suffixRegex.exec(metric);
-    return addMQEAlias(suffix[1], metric);
+    return suffix[1];
   }
 
   function addMQEAlias(alias, metric) {
     return metric + " {" + alias + "}";
+  }
+
+  // Wrap metric with ``: os.cpu.user -> `os.cpu.user`
+  function wrapMetric(metric) {
+    return '`' + metric + '`';
+  }
+
+  function wrapTag(tag) {
+    return "'" + tag + "'";
+  }
+
+  // Special value formatter for MQE metric.
+  // Render multi-value variables for using with metric template:
+  // $metric => ('os.cpu.user', 'os.cpu.system')
+  // select `$metric` => select `os.cpu.user`, `os.cpu.system`
+  function formatMQEMetric(value, format, variable) {
+    if (typeof value === 'string') {
+      return value;
+    }
+    return value.join("`, `");
   }
   return {
     setters: [function (_lodash) {
@@ -72,6 +97,7 @@ System.register(["lodash"], function (_export, _context) {
 
           this.target = target;
           this.templateSrv = templateSrv;
+          // this.templateSrv.formatValue = formatMQEMetric;
           this.scopedVars = scopedVars;
         }
 
@@ -105,14 +131,18 @@ System.register(["lodash"], function (_export, _context) {
                       if (containsWildcard(m.alias)) {
                         // Set whildcard part as metric alias
                         // query: os.cpu.* alias: * -> metric: os.cpu.system -> alias: system
-                        filteredMetrics = _.map(filteredMetrics, _.partial(getMetricSuffix, metric));
+                        filteredMetrics = _.map(filteredMetrics, _.partial(convertMetricWithWildcard, metric));
                       } else {
-                        filteredMetrics = _.map(filteredMetrics, _.partial(addMQEAlias, m.alias));
+                        filteredMetrics = _.map(filteredMetrics, _.compose(_.partial(addMQEAlias, m.alias), wrapMetric));
                       }
+                    } else {
+                      filteredMetrics = _.map(filteredMetrics, wrapMetric);
                     }
 
                     metrics = metrics.concat(filteredMetrics);
                   } else {
+                    metric = wrapMetric(metric);
+
                     // Add alias
                     if (m.alias) {
                       metric = addMQEAlias(m.alias, metric);
@@ -141,6 +171,15 @@ System.register(["lodash"], function (_export, _context) {
 
             return _.map(metrics, function (metric) {
               var query = "";
+
+              // Set custom metric format function
+              var formatValueOriginal = _this.templateSrv.formatValue;
+              _this.templateSrv.formatValue = formatMQEMetric;
+              metric = _this.templateSrv.replace(metric, _this.scopedVars);
+
+              // Set original format function
+              _this.templateSrv.formatValue = formatValueOriginal;
+
               query += metric;
 
               // Render apps and hosts
@@ -157,17 +196,13 @@ System.register(["lodash"], function (_export, _context) {
             if (apps.length || hosts.length) {
               query += " where ";
               if (apps.length) {
-                query += "app in (" + _.map(apps, function (app) {
-                  return "'" + app + "'";
-                }).join(', ') + ")";
+                query += "app in (" + _.map(apps, wrapTag).join(', ') + ")";
                 if (hosts.length) {
                   query += " and ";
                 }
               }
               if (hosts.length) {
-                query += "host in (" + _.map(hosts, function (host) {
-                  return "'" + host + "'";
-                }).join(', ') + ")";
+                query += "host in (" + _.map(hosts, wrapTag).join(', ') + ")";
               }
             }
             return query;
