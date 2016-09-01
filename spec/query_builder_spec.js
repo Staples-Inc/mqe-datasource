@@ -21,7 +21,12 @@ describe('MQEQuery', function() {
 
   describe('When render query', function() {
     beforeEach(function() {
-      ctx.templateSrv = {};
+      ctx.templateSrv = {
+        // Mock templateSrv.replace()
+        replace: function(value) {
+          return value;
+        }
+      };
       ctx.scopedVars = {};
 
       ctx.timeFrom = '1464130140000';

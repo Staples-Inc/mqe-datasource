@@ -6,6 +6,7 @@ export default class MQEQuery {
   constructor(target, templateSrv, scopedVars) {
     this.target = target;
     this.templateSrv = templateSrv;
+    // this.templateSrv.formatValue = formatMQEMetric;
     this.scopedVars = scopedVars;
   }
 
@@ -55,6 +56,15 @@ export default class MQEQuery {
 
     return _.map(metrics, metric => {
       let query = "";
+
+      // Set custom metric format function
+      let formatValueOriginal = this.templateSrv.formatValue;
+      this.templateSrv.formatValue = formatMQEMetric;
+      metric = this.templateSrv.replace(metric, this.scopedVars);
+
+      // Set original format function
+      this.templateSrv.formatValue = formatValueOriginal;
+
       query += metric;
 
       // Render apps and hosts
@@ -70,17 +80,13 @@ export default class MQEQuery {
     if (apps.length || hosts.length) {
       query += " where ";
       if (apps.length) {
-        query += "app in (" + _.map(apps, app => {
-          return "'" + app + "'";
-        }).join(', ') + ")";
+        query += "app in (" + _.map(apps, wrapTag).join(', ') + ")";
         if (hosts.length)  {
           query += " and ";
         }
       }
       if (hosts.length) {
-        query += "host in (" + _.map(hosts, host => {
-          return "'" + host + "'";
-        }).join(', ') + ")";
+        query += "host in (" + _.map(hosts, wrapTag).join(', ') + ")";
       }
     }
     return query;
@@ -176,4 +182,19 @@ function addMQEAlias(alias, metric) {
 // Wrap metric with ``: os.cpu.user -> `os.cpu.user`
 function wrapMetric(metric) {
   return '`' + metric + '`';
+}
+
+function wrapTag(tag) {
+  return "'" + tag + "'";
+}
+
+// Special value formatter for MQE metric.
+// Render multi-value variables for using with metric template:
+// $metric => ('os.cpu.user', 'os.cpu.system')
+// select `$metric` => select `os.cpu.user`, `os.cpu.system`
+function formatMQEMetric(value, format, variable) {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return value.join("`, `");
 }
