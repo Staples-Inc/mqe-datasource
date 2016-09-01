@@ -30,15 +30,25 @@ System.register(["lodash"], function (_export, _context) {
     return match ? match[0] : match;
   }
 
+  function convertMetricWithWildcard(metricQuery, metric) {
+    var suffix = getMetricSuffix(metricQuery, metric);
+    return addMQEAlias(suffix, wrapMetric(metric));
+  }
+
   function getMetricSuffix(metricQuery, metric) {
     var metricPrefix = metricQuery.replace(/\./g, '\\\.');
     var suffixRegex = new RegExp(metricPrefix.replace('*', '(.*)'));
     var suffix = suffixRegex.exec(metric);
-    return addMQEAlias(suffix[1], metric);
+    return suffix[1];
   }
 
   function addMQEAlias(alias, metric) {
     return metric + " {" + alias + "}";
+  }
+
+  // Wrap metric with ``: os.cpu.user -> `os.cpu.user`
+  function wrapMetric(metric) {
+    return '`' + metric + '`';
   }
   return {
     setters: [function (_lodash) {
@@ -66,7 +76,6 @@ System.register(["lodash"], function (_export, _context) {
       MQEQuery = function () {
 
         /** @ngInject */
-
         function MQEQuery(target, templateSrv, scopedVars) {
           _classCallCheck(this, MQEQuery);
 
@@ -105,14 +114,18 @@ System.register(["lodash"], function (_export, _context) {
                       if (containsWildcard(m.alias)) {
                         // Set whildcard part as metric alias
                         // query: os.cpu.* alias: * -> metric: os.cpu.system -> alias: system
-                        filteredMetrics = _.map(filteredMetrics, _.partial(getMetricSuffix, metric));
+                        filteredMetrics = _.map(filteredMetrics, _.partial(convertMetricWithWildcard, metric));
                       } else {
-                        filteredMetrics = _.map(filteredMetrics, _.partial(addMQEAlias, m.alias));
+                        filteredMetrics = _.map(filteredMetrics, _.compose(_.partial(addMQEAlias, m.alias), wrapMetric));
                       }
+                    } else {
+                      filteredMetrics = _.map(filteredMetrics, wrapMetric);
                     }
 
                     metrics = metrics.concat(filteredMetrics);
                   } else {
+                    metric = wrapMetric(metric);
+
                     // Add alias
                     if (m.alias) {
                       metric = addMQEAlias(m.alias, metric);

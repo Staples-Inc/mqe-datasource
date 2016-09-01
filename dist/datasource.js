@@ -19,7 +19,11 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
     if (typeof value === 'string') {
       return value;
     }
-    return value.join("', '");
+    if (variable.query == 'metrics') {
+      return value.join("`, `");
+    } else {
+      return value.join("', '");
+    }
   }
 
   function parseInterval(interval) {
@@ -110,7 +114,8 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
 
                 return mqeQueryPromise.then(function (mqeQueries) {
                   var queryPromises = _.map(mqeQueries, function (mqeQuery) {
-                    mqeQuery = self.templateSrv.replace(mqeQuery);
+                    mqeQuery = self.templateSrv.replace(mqeQuery, options.scopedVars);
+
                     return self._mqe_query(mqeQuery).then(function (response) {
                       return response_handler.handle_response(target, response);
                     });
