@@ -165,7 +165,12 @@ function formatMQETag(value, format, variable) {
   if (typeof value === 'string') {
     return value;
   }
-  return value.join("', '");
+    if (variable.query == 'metrics'){
+          return value.join("`, `");
+    }
+    else {
+          return value.join("', '");
+     }
 }
 
 function parseInterval(interval) {
