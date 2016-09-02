@@ -67,6 +67,11 @@ export default class MQEQuery {
 
       query += metric;
 
+      // Render functions if any
+      if(target.functions.length != 0) {
+          query += _this.addFunctions(target.functions);
+      }
+
       // Render apps and hosts
       query += this.renderWhere(target.apps, target.hosts);
 
@@ -75,6 +80,15 @@ export default class MQEQuery {
     });
   }
 
+  addFunctions(functions) {
+    var query = "";
+    if (functions.length) {
+        var result = _.map(functions, function (fn, index) {
+            query += "|" + fn + " ";
+        });
+        return query;
+    }
+}
   renderWhere(apps, hosts) {
     let query = "";
     if (apps.length || hosts.length) {
