@@ -104,13 +104,13 @@ export class MQEQueryCtrl extends QueryCtrl {
   }
 
   functionSegmentChanged(segment, index) {
-    var _this3 = this;
+    let self = this;
 
     if (segment.type === 'plus-button') {
         segment.type = undefined;
     }
     this.target.functions = _.map(_.filter(this.functionSegments, function (segment) {
-        return segment.type !== 'plus-button' && segment.value !== _this3.removeSegment.value;
+        return segment.type !== 'plus-button' && segment.value !== self.removeSegment.value;
     }), 'value');
     this.functionSegments = _.map(this.target.functions, this.uiSegmentSrv.newSegment);
     this.functionSegments.push(this.uiSegmentSrv.newPlusButton());
@@ -160,12 +160,23 @@ export class MQEQueryCtrl extends QueryCtrl {
     });
   }
 
+  refineFunctionList(functions) {
+    var operatorlist = ['*','+','-','/'];
+    _.forEach(operatorlist, function (item) {
+        var index = functions.indexOf(item);
+        if (index > -1) {
+            functions.splice(index, 1);
+        }
+    });
+    return functions;
+}
   getFunctions() {
-    var _this10 = this;
 
-    return this.exploreMetrics('functions').then(function (functions) {
-      var segments = _this10.transformToSegments(functions, true);
-      segments.splice(0, 0, angular.copy(_this10.removeSegment));
+    return this.exploreMetrics('functions').then((functions) => {
+      // remove operators like *+-/ from the function list
+      functions = this.refineFunctionList(functions);
+      var segments = this.transformToSegments(functions, true);
+      segments.splice(0, 0, angular.copy(this.removeSegment));
       return segments;
     });
   }

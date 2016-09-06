@@ -83,12 +83,12 @@ export default class MQEQuery {
   addFunctions(functions) {
     var query = "";
     if (functions.length) {
-        var result = _.map(functions, function (fn, index) {
+        _.forEach(functions, function (fn) {
             query += "|" + fn + " ";
         });
-        return query;
-    }
-}
+      }
+      return query;
+  }
   renderWhere(apps, hosts) {
     let query = "";
     if (apps.length || hosts.length) {
