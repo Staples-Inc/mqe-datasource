@@ -18,6 +18,7 @@ export class MQEQueryCtrl extends QueryCtrl {
       metrics: [{metric: ""}],
       apps: [],
       hosts: [],
+      functions:[],
       addAppToAlias: true,
       addHostToAlias: true
     };
@@ -25,9 +26,11 @@ export class MQEQueryCtrl extends QueryCtrl {
 
     this.appSegments = _.map(this.target.apps, this.uiSegmentSrv.newSegment);
     this.hostSegments = _.map(this.target.hosts, this.uiSegmentSrv.newSegment);
+    this.functionSegments = _.map(this.target.functions, this.uiSegmentSrv.newSegment);
     this.removeSegment = uiSegmentSrv.newSegment({fake: true, value: '-- remove --'});
     this.fixSegments(this.appSegments);
     this.fixSegments(this.hostSegments);
+    this.fixSegments(this.functionSegments);
 
     // bs-typeahead can't work with async code so we need to
     // store metrics first.
@@ -100,6 +103,19 @@ export class MQEQueryCtrl extends QueryCtrl {
     this.onChangeInternal();
   }
 
+  functionSegmentChanged(segment, index) {
+    let self = this;
+
+    if (segment.type === 'plus-button') {
+        segment.type = undefined;
+    }
+    this.target.functions = _.map(_.filter(this.functionSegments, function (segment) {
+        return segment.type !== 'plus-button' && segment.value !== self.removeSegment.value;
+    }), 'value');
+    this.functionSegments = _.map(this.target.functions, this.uiSegmentSrv.newSegment);
+    this.functionSegments.push(this.uiSegmentSrv.newPlusButton());
+    this.onChangeInternal();
+}
   addMetric() {
     this.target.metrics.push({metric: ""});
     this.onChangeInternal();
@@ -144,6 +160,26 @@ export class MQEQueryCtrl extends QueryCtrl {
     });
   }
 
+  refineFunctionList(functions) {
+    var operatorlist = ['*','+','-','/'];
+    _.forEach(operatorlist, function (item) {
+        var index = functions.indexOf(item);
+        if (index > -1) {
+            functions.splice(index, 1);
+        }
+    });
+    return functions;
+}
+  getFunctions() {
+
+    return this.exploreMetrics('functions').then((functions) => {
+      // remove operators like *+-/ from the function list
+      functions = this.refineFunctionList(functions);
+      var segments = this.transformToSegments(functions, true);
+      segments.splice(0, 0, angular.copy(this.removeSegment));
+      return segments;
+    });
+  }
   ///////////////////////
 
   transformToSegments(results, addTemplateVars) {
