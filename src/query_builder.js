@@ -31,7 +31,14 @@ export default class MQEQuery {
               // query: os.cpu.* alias: * -> metric: os.cpu.system -> alias: system
               filteredMetrics = _.map(filteredMetrics,
                 _.partial(convertMetricWithWildcard, metric));
-            } else {
+            } else if(containsIndex(m.alias)){
+                // query: springboot.gauge.* (the  metric can be very lengthy like below)
+                // metric: springboot.gauge.hystrix.HystrixThreadPool.GP-API-TIERC-PRODUCT.reportingHosts
+                // alias: $6 ie show only reportingHosts
+                var indices = getAliasIndexArray(m.alias);
+                filteredMetrics = _.map(filteredMetrics, _.partial(convertMetricWithIndex, indices));
+            }
+            else {
               filteredMetrics = _.map(filteredMetrics,
                 _.compose(_.partial(addMQEAlias, m.alias), wrapMetric));
             }
@@ -161,6 +168,46 @@ export default class MQEQuery {
 function containsWildcard(str) {
   var wildcardRegex = /\*/;
   return wildcardRegex.test(str);
+}
+
+function containsIndex(str) {
+    var wildcardRegex = /\$/;
+    return wildcardRegex.test(str);
+}
+
+function getAliasIndexArray(str) {
+    // replace all the $ with space
+    // convert it to list
+    str = str.replace(/\$/g, ' ');
+    str = str.trim();
+    var indices = str.split(' ');
+    for(var i=0; i<indices.length; i++) {
+        indices[i] = parseInt(indices[i], 10);
+    }
+    return indices;
+}
+
+function getMetricSplits(str) {
+    var metricSplits = str.split('.');
+    return (metricSplits);
+
+}
+
+function getCustomAliasName(metricSplits, indices) {
+    var aliasString = "";
+    for( var i = 0; i<indices.length; i++) {
+        var index = indices[i]-1;
+        if(index >= 0 && index <  metricSplits.length) {
+
+            aliasString += metricSplits[indices[i] - 1] + ".";
+        }
+    }
+    return aliasString.slice(0, -1);
+}
+
+function convertMetricWithIndex(indices, metric) {
+    var suffix = getCustomAliasName(getMetricSplits(metric),indices);
+    return addMQEAlias(suffix, wrapMetric(metric));
 }
 
 function filterMetrics(str, metrics) {
