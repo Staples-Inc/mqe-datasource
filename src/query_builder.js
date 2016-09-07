@@ -68,7 +68,7 @@ export default class MQEQuery {
       query += metric;
 
       // Render functions if any
-      if(target.functions.length !== 0) {
+      if(target.functions && target.functions.length) {
         query += this.addFunctions(target.functions);
       }
 
