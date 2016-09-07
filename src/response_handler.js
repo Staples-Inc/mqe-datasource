@@ -52,11 +52,11 @@ export function handle_explore_response(query, response) {
   if (query === 'tagset') {
     return getTagset(response);
   }
-  else if (query === 'apps') {
-    return getTagset(response)['App'];
+  else if (query === 'cluster') {
+    return getTagset(response)['cluster'];
   }
   else if (query === 'hosts') {
-    return getTagset(response)['Hosts'];
+    return getTagset(response)['hosts'];
   }
   else {
     return response.body[query];
