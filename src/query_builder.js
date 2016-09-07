@@ -68,8 +68,8 @@ export default class MQEQuery {
       query += metric;
 
       // Render functions if any
-      if(target.functions.length != 0) {
-          query += _this.addFunctions(target.functions);
+      if(target.functions.length !== 0) {
+        query += this.addFunctions(target.functions);
       }
 
       // Render apps and hosts
@@ -83,11 +83,11 @@ export default class MQEQuery {
   addFunctions(functions) {
     var query = "";
     if (functions.length) {
-        _.forEach(functions, function (fn) {
-            query += "|" + fn + " ";
-        });
-      }
-      return query;
+      _.forEach(functions, function (fn) {
+        query += "|" + fn + " ";
+      });
+    }
+    return query;
   }
   renderWhere(apps, hosts) {
     let query = "";
