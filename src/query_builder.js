@@ -32,9 +32,9 @@ export default class MQEQuery {
               filteredMetrics = _.map(filteredMetrics,
                 _.partial(convertMetricWithWildcard, metric));
             } else if(containsIndex(m.alias)){
-                // query: springboot.gauge.* (the  metric can be very lengthy like below)
-                // metric: springboot.gauge.hystrix.HystrixThreadPool.GP-API-TIERC-PRODUCT.reportingHosts
-                // alias: $6 ie show only reportingHosts
+                // query: tag1.tag2.* (the  metric can be very lengthy like below)
+                // metric: tag1.tag2.tag3.tag4.tag5.tag6
+                // alias: $6 ie show only tag6
                 var indices = getAliasIndexArray(m.alias);
                 filteredMetrics = _.map(filteredMetrics, _.partial(convertMetricWithIndex, indices));
             }

@@ -145,7 +145,7 @@ export class MQEQueryCtrl extends QueryCtrl {
   }
 
   getApps() {
-    return this.exploreMetrics('apps').then(apps => {
+    return this.exploreMetrics('cluster').then(apps => {
       let segments = this.transformToSegments(apps, true);
       segments.splice(0, 0, angular.copy(this.removeSegment));
       return segments;
