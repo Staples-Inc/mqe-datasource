@@ -246,7 +246,7 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
           value: function getApps() {
             var _this4 = this;
 
-            return this.exploreMetrics('apps').then(function (apps) {
+            return this.exploreMetrics('cluster').then(function (apps) {
               var segments = _this4.transformToSegments(apps, true);
               segments.splice(0, 0, angular.copy(_this4.removeSegment));
               return segments;
