@@ -171,7 +171,7 @@ function containsWildcard(str) {
 }
 
 function containsIndex(str) {
-    var wildcardRegex = /\$/;
+    var wildcardRegex = /\$(\d)/g;
     return wildcardRegex.test(str);
 }
 
