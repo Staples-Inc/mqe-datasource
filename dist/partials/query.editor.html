@@ -87,6 +87,15 @@
           on-change="ctrl.hostSegmentChanged(segment, $index)">
         </metric-segment>
       </div>
+        <div class="gf-form">
+            <label class="gf-form-label query-keyword width-9">Function</label>
+        </div>
+        <div class="gf-form" ng-repeat="segment in ctrl.functionSegments">
+            <metric-segment segment="segment"
+                            get-options="ctrl.getFunctions()"
+                            on-change="ctrl.functionSegmentChanged(segment, $index)">
+            </metric-segment>
+        </div>
       <div class="gf-form gf-form--grow">
         <div class="gf-form-label gf-form-label--grow"></div>
       </div>

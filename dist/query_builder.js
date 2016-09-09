@@ -16,6 +16,45 @@ System.register(["lodash"], function (_export, _context) {
     return wildcardRegex.test(str);
   }
 
+  function containsIndex(str) {
+    var wildcardRegex = /\$/;
+    return wildcardRegex.test(str);
+  }
+
+  function getAliasIndexArray(str) {
+    // replace all the $ with space
+    // convert it to list
+    str = str.replace(/\$/g, ' ');
+    str = str.trim();
+    var indices = str.split(' ');
+    for (var i = 0; i < indices.length; i++) {
+      indices[i] = parseInt(indices[i], 10);
+    }
+    return indices;
+  }
+
+  function getMetricSplits(str) {
+    var metricSplits = str.split('.');
+    return metricSplits;
+  }
+
+  function getCustomAliasName(metricSplits, indices) {
+    var aliasString = "";
+    for (var i = 0; i < indices.length; i++) {
+      var index = indices[i] - 1;
+      if (index >= 0 && index < metricSplits.length) {
+
+        aliasString += metricSplits[indices[i] - 1] + ".";
+      }
+    }
+    return aliasString.slice(0, -1);
+  }
+
+  function convertMetricWithIndex(indices, metric) {
+    var suffix = getCustomAliasName(getMetricSplits(metric), indices);
+    return addMQEAlias(suffix, wrapMetric(metric));
+  }
+
   function filterMetrics(str, metrics) {
     str = str.replace(/\./g, '\\\.');
     var filterRegex = new RegExp(str.replace('*', '.*'), 'g');
@@ -91,7 +130,6 @@ System.register(["lodash"], function (_export, _context) {
       MQEQuery = function () {
 
         /** @ngInject */
-
         function MQEQuery(target, templateSrv, scopedVars) {
           _classCallCheck(this, MQEQuery);
 
@@ -132,6 +170,12 @@ System.register(["lodash"], function (_export, _context) {
                         // Set whildcard part as metric alias
                         // query: os.cpu.* alias: * -> metric: os.cpu.system -> alias: system
                         filteredMetrics = _.map(filteredMetrics, _.partial(convertMetricWithWildcard, metric));
+                      } else if (containsIndex(m.alias)) {
+                        // query: tag1.tag2.* (the  metric can be very lengthy like below)
+                        // metric: tag1.tag2.tag3.tag4.tag5.tag6
+                        // alias: $6 ie show only tag6
+                        var indices = getAliasIndexArray(m.alias);
+                        filteredMetrics = _.map(filteredMetrics, _.partial(convertMetricWithIndex, indices));
                       } else {
                         filteredMetrics = _.map(filteredMetrics, _.compose(_.partial(addMQEAlias, m.alias), wrapMetric));
                       }
@@ -182,12 +226,28 @@ System.register(["lodash"], function (_export, _context) {
 
               query += metric;
 
+              // Render functions if any
+              if (target.functions && target.functions.length) {
+                query += _this.addFunctions(target.functions);
+              }
+
               // Render apps and hosts
               query += _this.renderWhere(target.apps, target.hosts);
 
               query = MQEQuery.addTimeRange(query, timeFrom, timeTo);
               return query;
             });
+          }
+        }, {
+          key: "addFunctions",
+          value: function addFunctions(functions) {
+            var query = "";
+            if (functions.length) {
+              _.forEach(functions, function (fn) {
+                query += "|" + fn + " ";
+              });
+            }
+            return query;
           }
         }, {
           key: "renderWhere",

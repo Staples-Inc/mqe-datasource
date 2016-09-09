@@ -70,7 +70,7 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
         function MQEQueryCtrl($scope, $injector, $q, uiSegmentSrv, templateSrv) {
           _classCallCheck(this, MQEQueryCtrl);
 
-          var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(MQEQueryCtrl).call(this, $scope, $injector));
+          var _this = _possibleConstructorReturn(this, (MQEQueryCtrl.__proto__ || Object.getPrototypeOf(MQEQueryCtrl)).call(this, $scope, $injector));
 
           _this.scope = $scope;
           _this.$q = $q;
@@ -82,6 +82,7 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
             metrics: [{ metric: "" }],
             apps: [],
             hosts: [],
+            functions: [],
             addAppToAlias: true,
             addHostToAlias: true
           };
@@ -89,9 +90,11 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
 
           _this.appSegments = _.map(_this.target.apps, _this.uiSegmentSrv.newSegment);
           _this.hostSegments = _.map(_this.target.hosts, _this.uiSegmentSrv.newSegment);
+          _this.functionSegments = _.map(_this.target.functions, _this.uiSegmentSrv.newSegment);
           _this.removeSegment = uiSegmentSrv.newSegment({ fake: true, value: '-- remove --' });
           _this.fixSegments(_this.appSegments);
           _this.fixSegments(_this.hostSegments);
+          _this.fixSegments(_this.functionSegments);
 
           // bs-typeahead can't work with async code so we need to
           // store metrics first.
@@ -174,6 +177,21 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
             this.onChangeInternal();
           }
         }, {
+          key: 'functionSegmentChanged',
+          value: function functionSegmentChanged(segment, index) {
+            var self = this;
+
+            if (segment.type === 'plus-button') {
+              segment.type = undefined;
+            }
+            this.target.functions = _.map(_.filter(this.functionSegments, function (segment) {
+              return segment.type !== 'plus-button' && segment.value !== self.removeSegment.value;
+            }), 'value');
+            this.functionSegments = _.map(this.target.functions, this.uiSegmentSrv.newSegment);
+            this.functionSegments.push(this.uiSegmentSrv.newPlusButton());
+            this.onChangeInternal();
+          }
+        }, {
           key: 'addMetric',
           value: function addMetric() {
             this.target.metrics.push({ metric: "" });
@@ -228,7 +246,7 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
           value: function getApps() {
             var _this4 = this;
 
-            return this.exploreMetrics('apps').then(function (apps) {
+            return this.exploreMetrics('cluster').then(function (apps) {
               var segments = _this4.transformToSegments(apps, true);
               segments.splice(0, 0, angular.copy(_this4.removeSegment));
               return segments;
@@ -246,12 +264,37 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
             });
           }
         }, {
-          key: 'transformToSegments',
-          value: function transformToSegments(results, addTemplateVars) {
+          key: 'refineFunctionList',
+          value: function refineFunctionList(functions) {
+            var operatorlist = ['*', '+', '-', '/'];
+            _.forEach(operatorlist, function (item) {
+              var index = functions.indexOf(item);
+              if (index > -1) {
+                functions.splice(index, 1);
+              }
+            });
+            return functions;
+          }
+        }, {
+          key: 'getFunctions',
+          value: function getFunctions() {
             var _this6 = this;
 
+            return this.exploreMetrics('functions').then(function (functions) {
+              // remove operators like *+-/ from the function list
+              functions = _this6.refineFunctionList(functions);
+              var segments = _this6.transformToSegments(functions, true);
+              segments.splice(0, 0, angular.copy(_this6.removeSegment));
+              return segments;
+            });
+          }
+        }, {
+          key: 'transformToSegments',
+          value: function transformToSegments(results, addTemplateVars) {
+            var _this7 = this;
+
             var segments = _.map(_.flatten(results), function (value) {
-              return _this6.uiSegmentSrv.newSegment({
+              return _this7.uiSegmentSrv.newSegment({
                 value: value.toString(),
                 expandable: false
               });
