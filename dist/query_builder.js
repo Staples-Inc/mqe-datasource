@@ -17,7 +17,7 @@ System.register(["lodash"], function (_export, _context) {
   }
 
   function containsIndex(str) {
-    var wildcardRegex = /\$/;
+    var wildcardRegex = /\$(\d)/g;
     return wildcardRegex.test(str);
   }
 
