@@ -1,5 +1,27 @@
 import _ from 'lodash';
 
+function filterLegendMetricString(name) {
+    if(name.length == 0) {
+        return '';
+    }
+    var displayString =  name;
+
+    // return alias only if any.
+    var firstIndex = displayString.lastIndexOf('(');
+
+    // if no alias and no functions present, just return the metric itself;
+    if(-1 == firstIndex){
+        return displayString;
+    }
+    var filteredString = displayString.substring(firstIndex+1);
+    var lastIndex = filteredString.indexOf(' ');
+    if(-1 == lastIndex){
+        lastIndex = filteredString.indexOf(')');
+    }
+    displayString = filteredString.substring(0, lastIndex);
+    return displayString;
+}
+
 export function handle_response(target, response) {
   var timeseries = _.map(response.body, (body) => {
     return _.map(body.series, (series) => {
@@ -23,7 +45,7 @@ export function handle_response(target, response) {
       }).join(' ');
 
       return {
-        target: metric_prefix + ' ' + body.name,
+        target: metric_prefix + ' ' +filterLegendMetricString(body.name),
         datapoints: datapoints
       };
     });
