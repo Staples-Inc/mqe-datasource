@@ -166,7 +166,7 @@ export default class MQEQuery {
 }
 
 function containsWildcard(str) {
-  var wildcardRegex = /\*/;
+  var wildcardRegex = /[*!]/;
   return wildcardRegex.test(str);
 }
 
@@ -209,13 +209,41 @@ function convertMetricWithIndex(indices, metric) {
     var suffix = getCustomAliasName(getMetricSplits(metric),indices);
     return addMQEAlias(suffix, wrapMetric(metric));
 }
+function composeRegex(str){
+  var regex="";
+  var metricSplits = getMetricSplits(str);
+  for(var i = 0; i<metricSplits.length; i++){
+    if(metricSplits[i].search(/!/g ) !== -1){
+       var str = metricSplits[i].replace(/!/g,"");
+          regex += "^(?!.*"+str;
+    }
+    else if(metricSplits[i].search(/\*/g ) !== -1){
+        var str = metricSplits[i].replace(/\*/g,"");
+           regex += "(?=.*"+str;
+    }
+    else {
+        regex += "(?=.*"+metricSplits[i];
+    }
+        regex += (i == metricSplits.length-1) ? ")" : "\.)";
+  }
+  regex = new RegExp(regex);
+  return regex;
+}
 
 function filterMetrics(str, metrics) {
-  str = str.replace(/\./g, '\\\.');
-  let filterRegex = new RegExp(str.replace('*', '.*'), 'g');
-  return _.filter(metrics, metric => {
-    return metric.search(filterRegex) !== -1;
-  });
+  let filterRegex;
+  var  containsFilter = str.search(/!/);
+  var metricSplits ;
+  if(containsFilter !== -1) {
+      filterRegex = composeRegex(str);
+  }
+  else {
+      str = str.replace(/\./g, '\\\.');
+      filterRegex = new RegExp(str.replace('*', '.*'), 'g');
+  }
+     return _.filter(metrics, metric => {
+       return metric.search(filterRegex) !== -1;
+     });
 }
 
 function trim(str) {
