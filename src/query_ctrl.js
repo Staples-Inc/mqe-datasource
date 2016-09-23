@@ -16,9 +16,9 @@ export class MQEQueryCtrl extends QueryCtrl {
     var target_defaults = {
       rawQuery: "",
       metrics: [{metric: ""}],
+      functionList:[{ func: ""}],
       apps: [],
       hosts: [],
-      functions:[],
       addAppToAlias: true,
       addHostToAlias: true
     };
@@ -26,11 +26,9 @@ export class MQEQueryCtrl extends QueryCtrl {
 
     this.appSegments = _.map(this.target.apps, this.uiSegmentSrv.newSegment);
     this.hostSegments = _.map(this.target.hosts, this.uiSegmentSrv.newSegment);
-    this.functionSegments = _.map(this.target.functions, this.uiSegmentSrv.newSegment);
     this.removeSegment = uiSegmentSrv.newSegment({fake: true, value: '-- remove --'});
     this.fixSegments(this.appSegments);
     this.fixSegments(this.hostSegments);
-    this.fixSegments(this.functionSegments);
 
     // bs-typeahead can't work with async code so we need to
     // store metrics first.
@@ -39,6 +37,12 @@ export class MQEQueryCtrl extends QueryCtrl {
     // Pass this to getMetrics() function, because it's called from bs-typeahead
     // without proper context.
     this.getMetrics = _.bind(this.getMetrics, this);
+
+    _this.availableFunctions = [];
+    _this.udpateFunctions();
+
+   // get functions here
+    _this.getFunctions = _.bind(_this.getFunctions, _this);
 
     // Update panel when metric selected from dropdown
     $scope.$on('typeahead-updated', () => {
@@ -103,21 +107,13 @@ export class MQEQueryCtrl extends QueryCtrl {
     this.onChangeInternal();
   }
 
-  functionSegmentChanged(segment, index) {
-    let self = this;
-
-    if (segment.type === 'plus-button') {
-        segment.type = undefined;
-    }
-    this.target.functions = _.map(_.filter(this.functionSegments, function (segment) {
-        return segment.type !== 'plus-button' && segment.value !== self.removeSegment.value;
-    }), 'value');
-    this.functionSegments = _.map(this.target.functions, this.uiSegmentSrv.newSegment);
-    this.functionSegments.push(this.uiSegmentSrv.newPlusButton());
-    this.onChangeInternal();
-}
   addMetric() {
     this.target.metrics.push({metric: ""});
+    this.onChangeInternal();
+  }
+
+  addFunction() {
+    this.target.functionList.push({ func: "" });
     this.onChangeInternal();
   }
 
@@ -126,6 +122,10 @@ export class MQEQueryCtrl extends QueryCtrl {
     this.onChangeInternal();
   }
 
+  removeFunction(index) {
+    this.target.functionList.splice(this.target.functionList.length-1, 1);
+    this.onChangeInternal();
+  }
   ///////////////////////
   // Query suggestions //
   ///////////////////////
@@ -137,6 +137,14 @@ export class MQEQueryCtrl extends QueryCtrl {
       metrics.unshift('$' + variable.name);
     }
     return metrics;
+  }
+
+  getFunctions() {
+    var fns = _.clone(this.availableFunctions);
+    for (let variable of this.templateSrv.variables) {
+        fns.unshift('$' + variable.name);
+    }
+    return fns;
   }
 
   describeMetric(metric) {
@@ -170,14 +178,14 @@ export class MQEQueryCtrl extends QueryCtrl {
     });
     return functions;
 }
-  getFunctions() {
+  udpateFunctions() {
+    var self = this;
+    var functionList;
 
     return this.exploreMetrics('functions').then((functions) => {
       // remove operators like *+-/ from the function list
-      functions = this.refineFunctionList(functions);
-      var segments = this.transformToSegments(functions, true);
-      segments.splice(0, 0, angular.copy(this.removeSegment));
-      return segments;
+        functionList = this.refineFunctionList(functions);
+      self.availableFunctions = functionList;
     });
   }
   ///////////////////////

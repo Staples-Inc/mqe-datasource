@@ -30,31 +30,38 @@ export default class MQEQuery {
               // Set whildcard part as metric alias
               // query: os.cpu.* alias: * -> metric: os.cpu.system -> alias: system
               filteredMetrics = _.map(filteredMetrics,
-                _.partial(convertMetricWithWildcard, metric));
+                _.partial(convertMetricWithWildcard, target.functionList, metric));
             } else if(containsIndex(m.alias)){
                 // query: tag1.tag2.* (the  metric can be very lengthy like below)
                 // metric: tag1.tag2.tag3.tag4.tag5.tag6
                 // alias: $6 ie show only tag6
                 var indices = getAliasIndexArray(m.alias);
-                filteredMetrics = _.map(filteredMetrics, _.partial(convertMetricWithIndex, indices));
+                filteredMetrics = _.map(filteredMetrics, _.partial(convertMetricWithIndex, target.functionList, indices));
             }
             else {
               filteredMetrics = _.map(filteredMetrics,
-                _.compose(_.partial(addMQEAlias, m.alias), wrapMetric));
+                _.compose(_.partial(this.addFunctionsWithAlias, target.functionList, m.alias), wrapMetric));
             }
           } else {
-            filteredMetrics = _.map(filteredMetrics, wrapMetric);
+            filteredMetrics = _.map(filteredMetrics,_.compose(_.partial(_this.addFunctionsToMetric, target.functionList),wrapMetric));
           }
 
           metrics = metrics.concat(filteredMetrics);
         } else {
+          var defaultAlias = metric;
           metric = wrapMetric(metric);
-
+          // add functions here for single metric without wildcard
+          // Render functions if any
+          if(target.functionList.length != 0) {
+              metric += addFunctions(target.functionList);
+          }
           // Add alias
           if (m.alias) {
             metric = addMQEAlias(m.alias, metric);
           }
-
+          else {
+              metric = addMQEAlias(defaultAlias, metric);
+          }
           metrics = metrics.concat(metric);
         }
       }
@@ -74,11 +81,6 @@ export default class MQEQuery {
 
       query += metric;
 
-      // Render functions if any
-      if(target.functions && target.functions.length) {
-        query += this.addFunctions(target.functions);
-      }
-
       // Render apps and hosts
       query += this.renderWhere(target.apps, target.hosts);
 
@@ -87,15 +89,23 @@ export default class MQEQuery {
     });
   }
 
-  addFunctions(functions) {
-    var query = "";
-    if (functions.length) {
-      _.forEach(functions, function (fn) {
-        query += "|" + fn + " ";
-      });
+   addFunctionsWithAlias(functionList, alias, metric) {
+    if(functionList.length != 0) {
+        metric += addFunctions(functionList);
     }
-    return query;
+    var resultmetric =  addMQEAlias(alias, metric);
+    return resultmetric;
   }
+
+  addFunctionsToMetric(functionList, metric) {
+    if(functionList.length != 0) {
+        metric += addFunctions(functionList);
+        return addMQEAlias(metric, metric);
+    }
+
+    return metric;
+}
+
   renderWhere(apps, hosts) {
     let query = "";
     if (apps.length || hosts.length) {
@@ -205,6 +215,19 @@ function getCustomAliasName(metricSplits, indices) {
     return aliasString.slice(0, -1);
 }
 
+function addFunctions(functions){
+    var query = "";
+    if (functions.length) {
+        _.forEach(functions, function (fn) {
+            console.log('current function', fn);
+            if(fn.func.length != 0) {
+                query += "|" + fn.func + " ";
+            }
+        });
+    }
+    return query;
+}
+
 function convertMetricWithIndex(indices, metric) {
     var suffix = getCustomAliasName(getMetricSplits(metric),indices);
     return addMQEAlias(suffix, wrapMetric(metric));
@@ -252,9 +275,15 @@ function trim(str) {
   return match ? match[0] : match;
 }
 
-function convertMetricWithWildcard(metricQuery, metric) {
+function convertMetricWithWildcard(functions, metricQuery, metric) {
   let suffix = getMetricSuffix(metricQuery, metric);
-  return addMQEAlias(suffix, wrapMetric(metric));
+  metric = wrapMetric(metric);
+
+  // Render functions if any  before add alias
+  if(functions.length != 0) {
+      metric += addFunctions(functions);
+  }
+  return addMQEAlias(suffix, metric);
 }
 
 function getMetricSuffix(metricQuery, metric) {
