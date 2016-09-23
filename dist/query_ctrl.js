@@ -70,45 +70,49 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
         function MQEQueryCtrl($scope, $injector, $q, uiSegmentSrv, templateSrv) {
           _classCallCheck(this, MQEQueryCtrl);
 
-          var _this = _possibleConstructorReturn(this, (MQEQueryCtrl.__proto__ || Object.getPrototypeOf(MQEQueryCtrl)).call(this, $scope, $injector));
+          var _this2 = _possibleConstructorReturn(this, (MQEQueryCtrl.__proto__ || Object.getPrototypeOf(MQEQueryCtrl)).call(this, $scope, $injector));
 
-          _this.scope = $scope;
-          _this.$q = $q;
-          _this.uiSegmentSrv = uiSegmentSrv;
-          _this.templateSrv = templateSrv;
+          _this2.scope = $scope;
+          _this2.$q = $q;
+          _this2.uiSegmentSrv = uiSegmentSrv;
+          _this2.templateSrv = templateSrv;
 
           var target_defaults = {
             rawQuery: "",
             metrics: [{ metric: "" }],
+            functionList: [{ func: "" }],
             apps: [],
             hosts: [],
-            functions: [],
             addAppToAlias: true,
             addHostToAlias: true
           };
-          _.defaults(_this.target, target_defaults);
+          _.defaults(_this2.target, target_defaults);
 
-          _this.appSegments = _.map(_this.target.apps, _this.uiSegmentSrv.newSegment);
-          _this.hostSegments = _.map(_this.target.hosts, _this.uiSegmentSrv.newSegment);
-          _this.functionSegments = _.map(_this.target.functions, _this.uiSegmentSrv.newSegment);
-          _this.removeSegment = uiSegmentSrv.newSegment({ fake: true, value: '-- remove --' });
-          _this.fixSegments(_this.appSegments);
-          _this.fixSegments(_this.hostSegments);
-          _this.fixSegments(_this.functionSegments);
+          _this2.appSegments = _.map(_this2.target.apps, _this2.uiSegmentSrv.newSegment);
+          _this2.hostSegments = _.map(_this2.target.hosts, _this2.uiSegmentSrv.newSegment);
+          _this2.removeSegment = uiSegmentSrv.newSegment({ fake: true, value: '-- remove --' });
+          _this2.fixSegments(_this2.appSegments);
+          _this2.fixSegments(_this2.hostSegments);
 
           // bs-typeahead can't work with async code so we need to
           // store metrics first.
-          _this.availableMetrics = [];
-          _this.updateMetrics();
+          _this2.availableMetrics = [];
+          _this2.updateMetrics();
           // Pass this to getMetrics() function, because it's called from bs-typeahead
           // without proper context.
-          _this.getMetrics = _.bind(_this.getMetrics, _this);
+          _this2.getMetrics = _.bind(_this2.getMetrics, _this2);
+
+          _this.availableFunctions = [];
+          _this.udpateFunctions();
+
+          // get functions here
+          _this.getFunctions = _.bind(_this.getFunctions, _this);
 
           // Update panel when metric selected from dropdown
           $scope.$on('typeahead-updated', function () {
-            _this.onChangeInternal();
+            _this2.onChangeInternal();
           });
-          return _this;
+          return _this2;
         }
 
         _createClass(MQEQueryCtrl, [{
@@ -149,13 +153,13 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
         }, {
           key: 'appSegmentChanged',
           value: function appSegmentChanged(segment, index) {
-            var _this2 = this;
+            var _this3 = this;
 
             if (segment.type === 'plus-button') {
               segment.type = undefined;
             }
             this.target.apps = _.map(_.filter(this.appSegments, function (segment) {
-              return segment.type !== 'plus-button' && segment.value !== _this2.removeSegment.value;
+              return segment.type !== 'plus-button' && segment.value !== _this3.removeSegment.value;
             }), 'value');
             this.appSegments = _.map(this.target.apps, this.uiSegmentSrv.newSegment);
             this.appSegments.push(this.uiSegmentSrv.newPlusButton());
@@ -164,31 +168,16 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
         }, {
           key: 'hostSegmentChanged',
           value: function hostSegmentChanged(segment, index) {
-            var _this3 = this;
+            var _this4 = this;
 
             if (segment.type === 'plus-button') {
               segment.type = undefined;
             }
             this.target.hosts = _.map(_.filter(this.hostSegments, function (segment) {
-              return segment.type !== 'plus-button' && segment.value !== _this3.removeSegment.value;
+              return segment.type !== 'plus-button' && segment.value !== _this4.removeSegment.value;
             }), 'value');
             this.hostSegments = _.map(this.target.hosts, this.uiSegmentSrv.newSegment);
             this.hostSegments.push(this.uiSegmentSrv.newPlusButton());
-            this.onChangeInternal();
-          }
-        }, {
-          key: 'functionSegmentChanged',
-          value: function functionSegmentChanged(segment, index) {
-            var self = this;
-
-            if (segment.type === 'plus-button') {
-              segment.type = undefined;
-            }
-            this.target.functions = _.map(_.filter(this.functionSegments, function (segment) {
-              return segment.type !== 'plus-button' && segment.value !== self.removeSegment.value;
-            }), 'value');
-            this.functionSegments = _.map(this.target.functions, this.uiSegmentSrv.newSegment);
-            this.functionSegments.push(this.uiSegmentSrv.newPlusButton());
             this.onChangeInternal();
           }
         }, {
@@ -198,9 +187,21 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
             this.onChangeInternal();
           }
         }, {
+          key: 'addFunction',
+          value: function addFunction() {
+            this.target.functionList.push({ func: "" });
+            this.onChangeInternal();
+          }
+        }, {
           key: 'removeMetric',
           value: function removeMetric(index) {
             this.target.metrics.splice(index, 1);
+            this.onChangeInternal();
+          }
+        }, {
+          key: 'removeFunction',
+          value: function removeFunction(index) {
+            this.target.functionList.splice(this.target.functionList.length - 1, 1);
             this.onChangeInternal();
           }
         }, {
@@ -236,6 +237,37 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
             return metrics;
           }
         }, {
+          key: 'getFunctions',
+          value: function getFunctions() {
+            var fns = _.clone(this.availableFunctions);
+            var _iteratorNormalCompletion2 = true;
+            var _didIteratorError2 = false;
+            var _iteratorError2 = undefined;
+
+            try {
+              for (var _iterator2 = this.templateSrv.variables[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                var variable = _step2.value;
+
+                fns.unshift('$' + variable.name);
+              }
+            } catch (err) {
+              _didIteratorError2 = true;
+              _iteratorError2 = err;
+            } finally {
+              try {
+                if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                  _iterator2.return();
+                }
+              } finally {
+                if (_didIteratorError2) {
+                  throw _iteratorError2;
+                }
+              }
+            }
+
+            return fns;
+          }
+        }, {
           key: 'describeMetric',
           value: function describeMetric(metric) {
             var describeQuery = MQEQuery.getColumns(metric);
@@ -244,22 +276,22 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
         }, {
           key: 'getApps',
           value: function getApps() {
-            var _this4 = this;
+            var _this5 = this;
 
             return this.exploreMetrics('cluster').then(function (apps) {
-              var segments = _this4.transformToSegments(apps, true);
-              segments.splice(0, 0, angular.copy(_this4.removeSegment));
+              var segments = _this5.transformToSegments(apps, true);
+              segments.splice(0, 0, angular.copy(_this5.removeSegment));
               return segments;
             });
           }
         }, {
           key: 'getHosts',
           value: function getHosts() {
-            var _this5 = this;
+            var _this6 = this;
 
             return this.exploreMetrics('hosts').then(function (hosts) {
-              var segments = _this5.transformToSegments(hosts, true);
-              segments.splice(0, 0, angular.copy(_this5.removeSegment));
+              var segments = _this6.transformToSegments(hosts, true);
+              segments.splice(0, 0, angular.copy(_this6.removeSegment));
               return segments;
             });
           }
@@ -276,52 +308,53 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
             return functions;
           }
         }, {
-          key: 'getFunctions',
-          value: function getFunctions() {
-            var _this6 = this;
+          key: 'udpateFunctions',
+          value: function udpateFunctions() {
+            var _this7 = this;
+
+            var self = this;
+            var functionList;
 
             return this.exploreMetrics('functions').then(function (functions) {
               // remove operators like *+-/ from the function list
-              functions = _this6.refineFunctionList(functions);
-              var segments = _this6.transformToSegments(functions, true);
-              segments.splice(0, 0, angular.copy(_this6.removeSegment));
-              return segments;
+              functionList = _this7.refineFunctionList(functions);
+              self.availableFunctions = functionList;
             });
           }
         }, {
           key: 'transformToSegments',
           value: function transformToSegments(results, addTemplateVars) {
-            var _this7 = this;
+            var _this8 = this;
 
             var segments = _.map(_.flatten(results), function (value) {
-              return _this7.uiSegmentSrv.newSegment({
+              return _this8.uiSegmentSrv.newSegment({
                 value: value.toString(),
                 expandable: false
               });
             });
 
             if (addTemplateVars) {
-              var _iteratorNormalCompletion2 = true;
-              var _didIteratorError2 = false;
-              var _iteratorError2 = undefined;
+              var _iteratorNormalCompletion3 = true;
+              var _didIteratorError3 = false;
+              var _iteratorError3 = undefined;
 
               try {
-                for (var _iterator2 = this.templateSrv.variables[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                  var variable = _step2.value;
+                for (var _iterator3 = this.templateSrv.variables[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                  var variable = _step3.value;
 
                   segments.unshift(this.uiSegmentSrv.newSegment({ type: 'template', value: '$' + variable.name, expandable: true }));
                 }
               } catch (err) {
-                _didIteratorError2 = true;
-                _iteratorError2 = err;
+                _didIteratorError3 = true;
+                _iteratorError3 = err;
               } finally {
                 try {
-                  if (!_iteratorNormalCompletion2 && _iterator2.return) {
-                    _iterator2.return();
+                  if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                    _iterator3.return();
                   }
                 } finally {
-                  if (_didIteratorError2) {
-                    throw _iteratorError2;
+                  if (_didIteratorError3) {
+                    throw _iteratorError3;
                   }
                 }
               }

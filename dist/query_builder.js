@@ -12,7 +12,7 @@ System.register(["lodash"], function (_export, _context) {
   }
 
   function containsWildcard(str) {
-    var wildcardRegex = /\*/;
+    var wildcardRegex = /[*!]/;
     return wildcardRegex.test(str);
   }
 
@@ -50,14 +50,52 @@ System.register(["lodash"], function (_export, _context) {
     return aliasString.slice(0, -1);
   }
 
+  function addFunctions(functions) {
+    var query = "";
+    if (functions.length) {
+      _.forEach(functions, function (fn) {
+        console.log('current function', fn);
+        if (fn.func.length != 0) {
+          query += "|" + fn.func + " ";
+        }
+      });
+    }
+    return query;
+  }
+
   function convertMetricWithIndex(indices, metric) {
     var suffix = getCustomAliasName(getMetricSplits(metric), indices);
     return addMQEAlias(suffix, wrapMetric(metric));
   }
+  function composeRegex(str) {
+    var regex = "";
+    var metricSplits = getMetricSplits(str);
+    for (var i = 0; i < metricSplits.length; i++) {
+      if (metricSplits[i].search(/!/g) !== -1) {
+        var str = metricSplits[i].replace(/!/g, "");
+        regex += "^(?!.*" + str;
+      } else if (metricSplits[i].search(/\*/g) !== -1) {
+        var str = metricSplits[i].replace(/\*/g, "");
+        regex += "(?=.*" + str;
+      } else {
+        regex += "(?=.*" + metricSplits[i];
+      }
+      regex += i == metricSplits.length - 1 ? ")" : "\.)";
+    }
+    regex = new RegExp(regex);
+    return regex;
+  }
 
   function filterMetrics(str, metrics) {
-    str = str.replace(/\./g, '\\\.');
-    var filterRegex = new RegExp(str.replace('*', '.*'), 'g');
+    var filterRegex = void 0;
+    var containsFilter = str.search(/!/);
+    var metricSplits;
+    if (containsFilter !== -1) {
+      filterRegex = composeRegex(str);
+    } else {
+      str = str.replace(/\./g, '\\\.');
+      filterRegex = new RegExp(str.replace('*', '.*'), 'g');
+    }
     return _.filter(metrics, function (metric) {
       return metric.search(filterRegex) !== -1;
     });
@@ -69,9 +107,15 @@ System.register(["lodash"], function (_export, _context) {
     return match ? match[0] : match;
   }
 
-  function convertMetricWithWildcard(metricQuery, metric) {
+  function convertMetricWithWildcard(functions, metricQuery, metric) {
     var suffix = getMetricSuffix(metricQuery, metric);
-    return addMQEAlias(suffix, wrapMetric(metric));
+    metric = wrapMetric(metric);
+
+    // Render functions if any  before add alias
+    if (functions.length != 0) {
+      metric += addFunctions(functions);
+    }
+    return addMQEAlias(suffix, metric);
   }
 
   function getMetricSuffix(metricQuery, metric) {
@@ -169,29 +213,35 @@ System.register(["lodash"], function (_export, _context) {
                       if (containsWildcard(m.alias)) {
                         // Set whildcard part as metric alias
                         // query: os.cpu.* alias: * -> metric: os.cpu.system -> alias: system
-                        filteredMetrics = _.map(filteredMetrics, _.partial(convertMetricWithWildcard, metric));
+                        filteredMetrics = _.map(filteredMetrics, _.partial(convertMetricWithWildcard, target.functionList, metric));
                       } else if (containsIndex(m.alias)) {
                         // query: tag1.tag2.* (the  metric can be very lengthy like below)
                         // metric: tag1.tag2.tag3.tag4.tag5.tag6
                         // alias: $6 ie show only tag6
                         var indices = getAliasIndexArray(m.alias);
-                        filteredMetrics = _.map(filteredMetrics, _.partial(convertMetricWithIndex, indices));
+                        filteredMetrics = _.map(filteredMetrics, _.partial(convertMetricWithIndex, target.functionList, indices));
                       } else {
-                        filteredMetrics = _.map(filteredMetrics, _.compose(_.partial(addMQEAlias, m.alias), wrapMetric));
+                        filteredMetrics = _.map(filteredMetrics, _.compose(_.partial(this.addFunctionsWithAlias, target.functionList, m.alias), wrapMetric));
                       }
                     } else {
-                      filteredMetrics = _.map(filteredMetrics, wrapMetric);
+                      filteredMetrics = _.map(filteredMetrics, _.partial(this.addFunctionsToMetric, target.functionList));
                     }
 
                     metrics = metrics.concat(filteredMetrics);
                   } else {
+                    var defaultAlias = metric;
                     metric = wrapMetric(metric);
-
+                    // add functions here for single metric without wildcard
+                    // Render functions if any
+                    if (target.functionList.length != 0) {
+                      metric += addFunctions(target.functionList);
+                    }
                     // Add alias
                     if (m.alias) {
                       metric = addMQEAlias(m.alias, metric);
+                    } else {
+                      metric = addMQEAlias(defaultAlias, metric);
                     }
-
                     metrics = metrics.concat(metric);
                   }
                 }
@@ -226,11 +276,6 @@ System.register(["lodash"], function (_export, _context) {
 
               query += metric;
 
-              // Render functions if any
-              if (target.functions && target.functions.length) {
-                query += _this.addFunctions(target.functions);
-              }
-
               // Render apps and hosts
               query += _this.renderWhere(target.apps, target.hosts);
 
@@ -239,15 +284,25 @@ System.register(["lodash"], function (_export, _context) {
             });
           }
         }, {
-          key: "addFunctions",
-          value: function addFunctions(functions) {
-            var query = "";
-            if (functions.length) {
-              _.forEach(functions, function (fn) {
-                query += "|" + fn + " ";
-              });
+          key: "addFunctionsWithAlias",
+          value: function addFunctionsWithAlias(functionList, alias, metric) {
+            if (functionList.length != 0) {
+              metric += addFunctions(functionList);
             }
-            return query;
+            var resultmetric = addMQEAlias(alias, metric);
+            return resultmetric;
+          }
+        }, {
+          key: "addFunctionsToMetric",
+          value: function addFunctionsToMetric(functionList, metric) {
+            var defaultAlias = metric;
+            metric = wrapMetric(metric);
+            if (functionList.length != 0) {
+              metric += addFunctions(functionList);
+              return addMQEAlias(defaultAlias, metric);
+            }
+
+            return metric;
           }
         }, {
           key: "renderWhere",

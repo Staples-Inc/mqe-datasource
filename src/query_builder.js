@@ -43,7 +43,7 @@ export default class MQEQuery {
                 _.compose(_.partial(this.addFunctionsWithAlias, target.functionList, m.alias), wrapMetric));
             }
           } else {
-            filteredMetrics = _.map(filteredMetrics,_.compose(_.partial(_this.addFunctionsToMetric, target.functionList),wrapMetric));
+            filteredMetrics = _.map(filteredMetrics, _.partial(this.addFunctionsToMetric, target.functionList));
           }
 
           metrics = metrics.concat(filteredMetrics);
@@ -98,9 +98,11 @@ export default class MQEQuery {
   }
 
   addFunctionsToMetric(functionList, metric) {
+    let defaultAlias = metric;
+    metric = wrapMetric(metric);
     if(functionList.length != 0) {
         metric += addFunctions(functionList);
-        return addMQEAlias(metric, metric);
+        return addMQEAlias(defaultAlias, metric);
     }
 
     return metric;

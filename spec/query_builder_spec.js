@@ -14,6 +14,7 @@ describe('MQEQuery', function() {
     metrics: [
       {metric: 'os.cpu.all.user'}
     ],
+      functionList: [{ func: '' }],
     alias: '',
     apps: [],
     hosts: []
@@ -39,7 +40,7 @@ describe('MQEQuery', function() {
 
     it('should render proper MQE query', function(done) {
       var expected_query = [
-        "`os.cpu.all.user` from 1464130140000 to 1464130150000"
+        "`os.cpu.all.user` {os.cpu.all.user} from 1464130140000 to 1464130150000"
       ];
       var result = ctx.query.render(metricList, ctx.timeFrom, ctx.timeTo, ctx.interval);
       expect(result).to.deep.equal(expected_query);
@@ -51,14 +52,15 @@ describe('MQEQuery', function() {
         metrics: [
           {metric: "os.cpu.all.*"}
         ],
+          functionList: [{ func: '' }],
         apps: [],
         hosts: []
       };
 
       var expected_query = [
-        "`os.cpu.all.user` from 1464130140000 to 1464130150000",
-        "`os.cpu.all.system` from 1464130140000 to 1464130150000",
-        "`os.cpu.all.active` from 1464130140000 to 1464130150000"
+        "`os.cpu.all.user` {os.cpu.all.user} from 1464130140000 to 1464130150000",
+        "`os.cpu.all.system` {os.cpu.all.system} from 1464130140000 to 1464130150000",
+        "`os.cpu.all.active` {os.cpu.all.active} from 1464130140000 to 1464130150000"
       ];
 
       ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
@@ -74,13 +76,14 @@ describe('MQEQuery', function() {
           {metric: "os.cpu.all.user"},
           {metric: "os.cpu.all.system"}
         ],
+          functionList: [{ func: '' }],
         apps: [],
         hosts: []
       };
 
       var expected_query = [
-        "`os.cpu.all.user` from 1464130140000 to 1464130150000",
-        "`os.cpu.all.system` from 1464130140000 to 1464130150000"
+        "`os.cpu.all.user` {os.cpu.all.user} from 1464130140000 to 1464130150000",
+        "`os.cpu.all.system` {os.cpu.all.system} from 1464130140000 to 1464130150000"
       ];
 
       ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
@@ -95,13 +98,14 @@ describe('MQEQuery', function() {
         metrics: [
           {metric: "os.cpu.all.user"}
         ],
+          functionList: [{ func: '' }],
         apps: [],
         hosts: []
       };
 
       target.hosts = ["host01", "host02"];
       var expected_query = [
-        "`os.cpu.all.user` where host in ('host01', 'host02') from 1464130140000 to 1464130150000"
+        "`os.cpu.all.user` {os.cpu.all.user} where host in ('host01', 'host02') from 1464130140000 to 1464130150000"
       ];
 
       ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
@@ -110,7 +114,7 @@ describe('MQEQuery', function() {
 
       target.hosts = ["host01"];
       expected_query = [
-        "`os.cpu.all.user` where host in ('host01') from 1464130140000 to 1464130150000"
+        "`os.cpu.all.user` {os.cpu.all.user} where host in ('host01') from 1464130140000 to 1464130150000"
       ];
 
       ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
@@ -120,7 +124,7 @@ describe('MQEQuery', function() {
       target.hosts = ["host01"];
       target.apps = ["app1", "app2"];
       expected_query = [
-        "`os.cpu.all.user` where app in ('app1', 'app2') and host in ('host01') from 1464130140000 to 1464130150000"
+        "`os.cpu.all.user` {os.cpu.all.user} where app in ('app1', 'app2') and host in ('host01') from 1464130140000 to 1464130150000"
       ];
 
       ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
@@ -138,6 +142,7 @@ describe('MQEQuery', function() {
             alias: "user"
           }
         ],
+          functionList: [{ func: '' }],
         apps: [],
         hosts: []
       };
@@ -161,6 +166,7 @@ describe('MQEQuery', function() {
             alias: "*"
           }
         ],
+          functionList: [{ func: '' }],
         apps: [],
         hosts: []
       };

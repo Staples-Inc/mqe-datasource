@@ -88,13 +88,27 @@
         </metric-segment>
       </div>
         <div class="gf-form">
-            <label class="gf-form-label query-keyword width-9">Function</label>
+            <label class="gf-form-label query-keyword width-5">Function</label>
         </div>
-        <div class="gf-form" ng-repeat="segment in ctrl.functionSegments">
-            <metric-segment segment="segment"
-                            get-options="ctrl.getFunctions()"
-                            on-change="ctrl.functionSegmentChanged(segment, $index)">
-            </metric-segment>
+        <div class="gf-form" ng-repeat="func in ctrl.target.functionList">
+            <input type="text" class="gf-form-input width-14"
+                   ng-model="func.func"
+                   spellcheck="false"
+                   bs-typeahead="ctrl.getFunctions"
+                   data-min-length=0
+                   data-items=100
+                   ng-blur="ctrl.onChangeInternal()">
+            </input>
+            <label class="gf-form-label" ng-if="$last">
+                <a class="pointer" ng-click="ctrl.addFunction()">
+                    <i class="fa fa-plus"></i>
+                </a>
+            </label>
+            <label class="gf-form-label" ng-if="ctrl.target.functionList.length > 1">
+                <a class="pointer" ng-click="ctrl.removeFunction($index)">
+                    <i class="fa fa-minus"></i>
+                </a>
+            </label>
         </div>
       <div class="gf-form gf-form--grow">
         <div class="gf-form-label gf-form-label--grow"></div>
