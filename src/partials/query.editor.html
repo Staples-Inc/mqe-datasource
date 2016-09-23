@@ -40,7 +40,7 @@
         <label class="gf-form-label query-keyword width-7">Add to alias</label>
       </div>
       <div class="gf-form" ng-if="$first">
-        <gf-form-switch class="gf-form" label="App"
+        <gf-form-switch class="gf-form" label="Cluster"
           checked="ctrl.target.addAppToAlias"
           on-change="ctrl.onChangeInternal()">
         </gf-form-switch>
@@ -70,7 +70,7 @@
 
     <div class="gf-form-inline">
       <div class="gf-form">
-        <label class="gf-form-label query-keyword width-4">App</label>
+        <label class="gf-form-label query-keyword width-5">Cluster</label>
       </div>
       <div class="gf-form" ng-repeat="segment in ctrl.appSegments">
         <metric-segment segment="segment"

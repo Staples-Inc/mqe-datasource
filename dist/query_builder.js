@@ -256,7 +256,7 @@ System.register(["lodash"], function (_export, _context) {
             if (apps.length || hosts.length) {
               query += " where ";
               if (apps.length) {
-                query += "app in (" + _.map(apps, wrapTag).join(', ') + ")";
+                query += "cluster in (" + _.map(apps, wrapTag).join(', ') + ")";
                 if (hosts.length) {
                   query += " and ";
                 }
