@@ -221,7 +221,6 @@ function addFunctions(functions){
     var query = "";
     if (functions.length) {
         _.forEach(functions, function (fn) {
-            console.log('current function', fn);
             if(fn.func.length != 0) {
                 query += "|" + fn.func + " ";
             }
