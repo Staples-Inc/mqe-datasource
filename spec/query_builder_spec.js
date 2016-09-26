@@ -184,5 +184,25 @@ describe('MQEQuery', function() {
       done();
     });
 
+    it('should render proper query when no functions added', function(done) {
+      var target = {
+        metrics: [
+          {metric: "os.cpu.all.user"}
+        ],
+        apps: [],
+        hosts: []
+      };
+
+      var expected_query = [
+        "`os.cpu.all.user` {os.cpu.all.user} from 1464130140000 to 1464130150000"
+      ];
+
+      ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
+      var result = ctx.query.render(metricList, ctx.timeFrom, ctx.timeTo, ctx.interval);
+
+      expect(result).to.deep.equal(expected_query);
+      done();
+    });
+
   });
 });
