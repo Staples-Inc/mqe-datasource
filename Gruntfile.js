@@ -78,6 +78,29 @@ module.exports = function(grunt) {
           'dist/test/spec/*_spec.js'
         ]
       }
+    },
+
+    jshint: {
+      source: {
+        files: {
+          src: ['src/**/*.js'],
+        }
+      },
+      options: {
+        jshintrc: true,
+        reporter: require('jshint-stylish'),
+        ignores: [
+          'node_modules/*',
+          'dist/*',
+        ]
+      }
+    },
+
+    jscs: {
+      src: ['src/**/*.js'],
+      options: {
+        config: ".jscs.json",
+      },
     }
   });
 
@@ -86,6 +109,8 @@ module.exports = function(grunt) {
     'copy:src_to_dist',
     'copy:pluginDef',
     'babel',
+    'jshint',
+    'jscs',
     'mochaTest'
   ]);
 };
