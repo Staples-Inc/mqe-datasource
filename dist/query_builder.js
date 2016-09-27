@@ -43,7 +43,6 @@ System.register(["lodash"], function (_export, _context) {
     for (var i = 0; i < indices.length; i++) {
       var index = indices[i] - 1;
       if (index >= 0 && index < metricSplits.length) {
-
         aliasString += metricSplits[indices[i] - 1] + ".";
       }
     }
@@ -54,8 +53,7 @@ System.register(["lodash"], function (_export, _context) {
     var query = "";
     if (functions.length) {
       _.forEach(functions, function (fn) {
-        console.log('current function', fn);
-        if (fn.func.length != 0) {
+        if (fn.func.length !== 0) {
           query += "|" + fn.func + " ";
         }
       });
@@ -63,24 +61,32 @@ System.register(["lodash"], function (_export, _context) {
     return query;
   }
 
-  function convertMetricWithIndex(indices, metric) {
+  function convertMetricWithIndex(functionList, indices, metric) {
     var suffix = getCustomAliasName(getMetricSplits(metric), indices);
-    return addMQEAlias(suffix, wrapMetric(metric));
+    metric = wrapMetric(metric);
+    if (functionList !== undefined) {
+      if (functionList.length !== 0) {
+        metric += addFunctions(functionList);
+      }
+    }
+
+    return addMQEAlias(suffix, metric);
   }
+
   function composeRegex(str) {
     var regex = "";
     var metricSplits = getMetricSplits(str);
     for (var i = 0; i < metricSplits.length; i++) {
       if (metricSplits[i].search(/!/g) !== -1) {
-        var str = metricSplits[i].replace(/!/g, "");
+        str = metricSplits[i].replace(/!/g, "");
         regex += "^(?!.*" + str;
       } else if (metricSplits[i].search(/\*/g) !== -1) {
-        var str = metricSplits[i].replace(/\*/g, "");
+        str = metricSplits[i].replace(/\*/g, "");
         regex += "(?=.*" + str;
       } else {
         regex += "(?=.*" + metricSplits[i];
       }
-      regex += i == metricSplits.length - 1 ? ")" : "\.)";
+      regex += i === metricSplits.length - 1 ? ")" : "\.)";
     }
     regex = new RegExp(regex);
     return regex;
@@ -89,7 +95,7 @@ System.register(["lodash"], function (_export, _context) {
   function filterMetrics(str, metrics) {
     var filterRegex = void 0;
     var containsFilter = str.search(/!/);
-    var metricSplits;
+
     if (containsFilter !== -1) {
       filterRegex = composeRegex(str);
     } else {
@@ -112,8 +118,10 @@ System.register(["lodash"], function (_export, _context) {
     metric = wrapMetric(metric);
 
     // Render functions if any  before add alias
-    if (functions.length != 0) {
-      metric += addFunctions(functions);
+    if (functions !== undefined) {
+      if (functions.length !== 0) {
+        metric += addFunctions(functions);
+      }
     }
     return addMQEAlias(suffix, metric);
   }
@@ -233,8 +241,10 @@ System.register(["lodash"], function (_export, _context) {
                     metric = wrapMetric(metric);
                     // add functions here for single metric without wildcard
                     // Render functions if any
-                    if (target.functionList.length != 0) {
-                      metric += addFunctions(target.functionList);
+                    if (target.functionList !== undefined) {
+                      if (target.functionList.length !== 0) {
+                        metric += addFunctions(target.functionList);
+                      }
                     }
                     // Add alias
                     if (m.alias) {
@@ -286,8 +296,10 @@ System.register(["lodash"], function (_export, _context) {
         }, {
           key: "addFunctionsWithAlias",
           value: function addFunctionsWithAlias(functionList, alias, metric) {
-            if (functionList.length != 0) {
-              metric += addFunctions(functionList);
+            if (functionList !== undefined) {
+              if (functionList.length !== 0) {
+                metric += addFunctions(functionList);
+              }
             }
             var resultmetric = addMQEAlias(alias, metric);
             return resultmetric;
@@ -297,11 +309,12 @@ System.register(["lodash"], function (_export, _context) {
           value: function addFunctionsToMetric(functionList, metric) {
             var defaultAlias = metric;
             metric = wrapMetric(metric);
-            if (functionList.length != 0) {
-              metric += addFunctions(functionList);
-              return addMQEAlias(defaultAlias, metric);
+            if (functionList !== undefined) {
+              if (functionList.length !== 0) {
+                metric += addFunctions(functionList);
+                return addMQEAlias(defaultAlias, metric);
+              }
             }
-
             return metric;
           }
         }, {

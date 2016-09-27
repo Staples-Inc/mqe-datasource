@@ -38,11 +38,11 @@ export class MQEQueryCtrl extends QueryCtrl {
     // without proper context.
     this.getMetrics = _.bind(this.getMetrics, this);
 
-    _this.availableFunctions = [];
-    _this.udpateFunctions();
+    this.availableFunctions = [];
+    this.udpateFunctions();
 
-   // get functions here
-    _this.getFunctions = _.bind(_this.getFunctions, _this);
+    //get functions here
+    this.getFunctions = _.bind(this.getFunctions, this);
 
     // Update panel when metric selected from dropdown
     $scope.$on('typeahead-updated', () => {
@@ -122,7 +122,7 @@ export class MQEQueryCtrl extends QueryCtrl {
     this.onChangeInternal();
   }
 
-  removeFunction(index) {
+  removeFunction() {
     this.target.functionList.splice(this.target.functionList.length-1, 1);
     this.onChangeInternal();
   }
@@ -142,7 +142,7 @@ export class MQEQueryCtrl extends QueryCtrl {
   getFunctions() {
     var fns = _.clone(this.availableFunctions);
     for (let variable of this.templateSrv.variables) {
-        fns.unshift('$' + variable.name);
+      fns.unshift('$' + variable.name);
     }
     return fns;
   }
@@ -171,20 +171,21 @@ export class MQEQueryCtrl extends QueryCtrl {
   refineFunctionList(functions) {
     var operatorlist = ['*','+','-','/'];
     _.forEach(operatorlist, function (item) {
-        var index = functions.indexOf(item);
-        if (index > -1) {
-            functions.splice(index, 1);
-        }
+      var index = functions.indexOf(item);
+      if (index > -1) {
+        functions.splice(index, 1);
+      }
     });
     return functions;
-}
+
+  }
   udpateFunctions() {
     var self = this;
     var functionList;
 
     return this.exploreMetrics('functions').then((functions) => {
       // remove operators like *+-/ from the function list
-        functionList = this.refineFunctionList(functions);
+      functionList = this.refineFunctionList(functions);
       self.availableFunctions = functionList;
     });
   }
