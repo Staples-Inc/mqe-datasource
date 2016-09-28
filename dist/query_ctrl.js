@@ -70,7 +70,7 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
         function MQEQueryCtrl($scope, $injector, $q, uiSegmentSrv, templateSrv) {
           _classCallCheck(this, MQEQueryCtrl);
 
-          var _this = _possibleConstructorReturn(this, (MQEQueryCtrl.__proto__ || Object.getPrototypeOf(MQEQueryCtrl)).call(this, $scope, $injector));
+          var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(MQEQueryCtrl).call(this, $scope, $injector));
 
           _this.scope = $scope;
           _this.$q = $q;
