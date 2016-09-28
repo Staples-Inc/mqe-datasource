@@ -15,7 +15,7 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
   // Render multi-value variables for using in "IN" expression:
   // $host => ('backend01', 'backend02')
   // where host in $host => where host in ('backend01', 'backend02')
-  function formatMQETag(value, format, variable) {
+  function formatMQETag(value) {
     if (typeof value === 'string') {
       return value;
     }
@@ -104,7 +104,7 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
                   // Build query
                   var queryModel = new MQEQuery(target, _this.templateSrv, options.scopedVars);
                   mqeQueryPromise = _this._mqe_explore('metrics').then(function (metrics) {
-                    return queryModel.render(metrics, timeFrom, timeTo, options.interval);
+                    return queryModel.render(metrics, timeFrom, timeTo);
                   });
                 }
 

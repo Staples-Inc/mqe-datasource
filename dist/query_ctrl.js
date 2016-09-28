@@ -152,7 +152,7 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
           }
         }, {
           key: 'appSegmentChanged',
-          value: function appSegmentChanged(segment, index) {
+          value: function appSegmentChanged(segment) {
             var _this2 = this;
 
             if (segment.type === 'plus-button') {
@@ -167,7 +167,7 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
           }
         }, {
           key: 'hostSegmentChanged',
-          value: function hostSegmentChanged(segment, index) {
+          value: function hostSegmentChanged(segment) {
             var _this3 = this;
 
             if (segment.type === 'plus-button') {

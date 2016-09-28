@@ -14,7 +14,7 @@ export default class MQEQuery {
   // Query Rendering //
   /////////////////////
 
-  render(metricList, timeFrom, timeTo, interval) {
+  render(metricList, timeFrom, timeTo) {
     let target = this.target;
     let metrics = [];
 
@@ -173,7 +173,7 @@ export default class MQEQuery {
     return "describe " + metric;
   }
 
-  static addTimeRange(query, timeFrom, timeTo, interval) {
+  static addTimeRange(query, timeFrom, timeTo) {
     var timeRangeRegex = /from.*to/;
     if(!timeRangeRegex.test(query)) {
       query = trim(query) + " from " + timeFrom + " to " + timeTo;
@@ -325,7 +325,7 @@ function wrapTag(tag) {
 // Render multi-value variables for using with metric template:
 // $metric => ('os.cpu.user', 'os.cpu.system')
 // select `$metric` => select `os.cpu.user`, `os.cpu.system`
-function formatMQEMetric(value, format, variable) {
+function formatMQEMetric(value) {
   if (typeof value === 'string') {
     return value;
   }

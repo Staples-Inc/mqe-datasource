@@ -81,7 +81,7 @@ export class MQEQueryCtrl extends QueryCtrl {
     return this.target.rawQuery;
   }
 
-  appSegmentChanged(segment, index) {
+  appSegmentChanged(segment) {
     if (segment.type === 'plus-button') {
       segment.type = undefined;
     }
@@ -94,7 +94,7 @@ export class MQEQueryCtrl extends QueryCtrl {
     this.onChangeInternal();
   }
 
-  hostSegmentChanged(segment, index) {
+  hostSegmentChanged(segment) {
     if (segment.type === 'plus-button') {
       segment.type = undefined;
     }

@@ -75,7 +75,7 @@
       <div class="gf-form" ng-repeat="segment in ctrl.appSegments">
         <metric-segment segment="segment"
           get-options="ctrl.getApps()"
-          on-change="ctrl.appSegmentChanged(segment, $index)">
+          on-change="ctrl.appSegmentChanged(segment)">
         </metric-segment>
       </div>
       <div class="gf-form">
@@ -84,7 +84,7 @@
       <div class="gf-form" ng-repeat="segment in ctrl.hostSegments">
         <metric-segment segment="segment"
           get-options="ctrl.getHosts()"
-          on-change="ctrl.hostSegmentChanged(segment, $index)">
+          on-change="ctrl.hostSegmentChanged(segment)">
         </metric-segment>
       </div>
         <div class="gf-form">

@@ -150,7 +150,7 @@ System.register(["lodash"], function (_export, _context) {
   // Render multi-value variables for using with metric template:
   // $metric => ('os.cpu.user', 'os.cpu.system')
   // select `$metric` => select `os.cpu.user`, `os.cpu.system`
-  function formatMQEMetric(value, format, variable) {
+  function formatMQEMetric(value) {
     if (typeof value === 'string') {
       return value;
     }
@@ -197,7 +197,7 @@ System.register(["lodash"], function (_export, _context) {
 
         _createClass(MQEQuery, [{
           key: "render",
-          value: function render(metricList, timeFrom, timeTo, interval) {
+          value: function render(metricList, timeFrom, timeTo) {
             var _this = this;
 
             var target = this.target;
@@ -380,7 +380,7 @@ System.register(["lodash"], function (_export, _context) {
           }
         }, {
           key: "addTimeRange",
-          value: function addTimeRange(query, timeFrom, timeTo, interval) {
+          value: function addTimeRange(query, timeFrom, timeTo) {
             var timeRangeRegex = /from.*to/;
             if (!timeRangeRegex.test(query)) {
               query = trim(query) + " from " + timeFrom + " to " + timeTo;

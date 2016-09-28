@@ -45,7 +45,7 @@ export class MQEDatasource {
           // Build query
           var queryModel = new MQEQuery(target, this.templateSrv, options.scopedVars);
           mqeQueryPromise = this._mqe_explore('metrics').then(metrics => {
-            return queryModel.render(metrics, timeFrom, timeTo, options.interval);
+            return queryModel.render(metrics, timeFrom, timeTo);
           });
         }
 
@@ -161,7 +161,7 @@ export class MQEDatasource {
 // Render multi-value variables for using in "IN" expression:
 // $host => ('backend01', 'backend02')
 // where host in $host => where host in ('backend01', 'backend02')
-function formatMQETag(value, format, variable) {
+function formatMQETag(value) {
   if (typeof value === 'string') {
     return value;
   }
