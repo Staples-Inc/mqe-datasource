@@ -137,9 +137,31 @@ System.register(["lodash"], function (_export, _context) {
     return metric + " {" + alias + "}";
   }
 
+  function addJoinsIfAny(metricDetail) {
+    // check for joins in metricDetail
+    // if exists, take metric and keep on adding each JoinOperator and JoinMetric to the metric, like
+    // os.cpu.all.system` + `os.cpu.all.irq` - `os.cpu.guest etc
+    // if no joins, do nothing just return
+    var metric = metricDetail.metric;
+    if (metricDetail.joins !== undefined) {
+      if (metricDetail.joins.length !== 0) {
+        for (var i = 0; i < metricDetail.joins.length; i++) {
+          var currentJoinMetric = metricDetail.joins[i];
+          var joinOP = currentJoinMetric.joinOP.trim();
+          var joinMetric = currentJoinMetric.joinMetric.trim();
+
+          if (joinOP.length !== 0 && joinMetric.length !== 0) {
+            metric += "` " + currentJoinMetric.joinOP + " `" + currentJoinMetric.joinMetric;
+          }
+        }
+      }
+    }
+    return metric;
+  }
+
   // Wrap metric with ``: os.cpu.user -> `os.cpu.user`
   function wrapMetric(metric) {
-    return '`' + metric + '`';
+    return '(`' + metric + '`)';
   }
 
   function wrapTag(tag) {
@@ -238,6 +260,7 @@ System.register(["lodash"], function (_export, _context) {
                     metrics = metrics.concat(filteredMetrics);
                   } else {
                     var defaultAlias = metric;
+                    metric = addJoinsIfAny(m);
                     metric = wrapMetric(metric);
                     // add functions here for single metric without wildcard
                     // Render functions if any

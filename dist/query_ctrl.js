@@ -79,7 +79,7 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
 
           var target_defaults = {
             rawQuery: "",
-            metrics: [{ metric: "" }],
+            metrics: [{ metric: "", joins: [{ joinOP: "", joinMetric: "" }] }],
             functionList: [{ func: "" }],
             apps: [],
             hosts: [],
@@ -107,6 +107,13 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
 
           //get functions here
           _this.getFunctions = _.bind(_this.getFunctions, _this);
+
+          // operators
+          _this.availableOperators = [];
+          _this.updateOperators();
+
+          // get operators here
+          _this.getOperators = _.bind(_this.getOperators, _this);
 
           // Update panel when metric selected from dropdown
           $scope.$on('typeahead-updated', function () {
@@ -193,6 +200,22 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
             this.onChangeInternal();
           }
         }, {
+          key: 'addJoinMetric',
+          value: function addJoinMetric(index) {
+            if (this.target.metrics[index].joins === undefined) {
+              this.target.metrics[index]["joins"] = [{ joinOP: "", joinMetric: "" }];
+            } else {
+              this.target.metrics[index]['joins'].push({ joinOP: "", joinMetric: "" });
+            }
+            this.onChangeInternal();
+          }
+        }, {
+          key: 'removeJoinMetric',
+          value: function removeJoinMetric(index) {
+            this.target.metrics[index].joins.splice(this.target.metrics[index].joins.length - 1, 1);
+            this.onChangeInternal();
+          }
+        }, {
           key: 'removeMetric',
           value: function removeMetric(index) {
             this.target.metrics.splice(index, 1);
@@ -203,6 +226,26 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
           value: function removeFunction() {
             this.target.functionList.splice(this.target.functionList.length - 1, 1);
             this.onChangeInternal();
+          }
+        }, {
+          key: 'extractOpList',
+          value: function extractOpList(functions) {
+            var operatorRegex = /[\+\-\*\/~`\!@#$%\^&()|><\?]/;
+            return _.filter(functions, function (fn) {
+              return fn.search(operatorRegex) !== -1;
+            });
+          }
+        }, {
+          key: 'updateOperators',
+          value: function updateOperators() {
+            var _this4 = this;
+
+            var opList = [];
+            var self = this;
+            return this.exploreMetrics('functions').then(function (functions) {
+              opList = _this4.extractOpList(functions);
+              self.availableOperators = opList;
+            });
           }
         }, {
           key: 'getMetrics',
@@ -235,6 +278,12 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
             }
 
             return metrics;
+          }
+        }, {
+          key: 'getOperators',
+          value: function getOperators() {
+            var operatorList = _.clone(this.availableOperators);
+            return operatorList;
           }
         }, {
           key: 'getFunctions',
@@ -276,22 +325,22 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
         }, {
           key: 'getApps',
           value: function getApps() {
-            var _this4 = this;
+            var _this5 = this;
 
             return this.exploreMetrics('cluster').then(function (apps) {
-              var segments = _this4.transformToSegments(apps, true);
-              segments.splice(0, 0, angular.copy(_this4.removeSegment));
+              var segments = _this5.transformToSegments(apps, true);
+              segments.splice(0, 0, angular.copy(_this5.removeSegment));
               return segments;
             });
           }
         }, {
           key: 'getHosts',
           value: function getHosts() {
-            var _this5 = this;
+            var _this6 = this;
 
             return this.exploreMetrics('hosts').then(function (hosts) {
-              var segments = _this5.transformToSegments(hosts, true);
-              segments.splice(0, 0, angular.copy(_this5.removeSegment));
+              var segments = _this6.transformToSegments(hosts, true);
+              segments.splice(0, 0, angular.copy(_this6.removeSegment));
               return segments;
             });
           }
@@ -310,24 +359,24 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
         }, {
           key: 'udpateFunctions',
           value: function udpateFunctions() {
-            var _this6 = this;
+            var _this7 = this;
 
             var self = this;
             var functionList;
 
             return this.exploreMetrics('functions').then(function (functions) {
               // remove operators like *+-/ from the function list
-              functionList = _this6.refineFunctionList(functions);
+              functionList = _this7.refineFunctionList(functions);
               self.availableFunctions = functionList;
             });
           }
         }, {
           key: 'transformToSegments',
           value: function transformToSegments(results, addTemplateVars) {
-            var _this7 = this;
+            var _this8 = this;
 
             var segments = _.map(_.flatten(results), function (value) {
-              return _this7.uiSegmentSrv.newSegment({
+              return _this8.uiSegmentSrv.newSegment({
                 value: value.toString(),
                 expandable: false
               });

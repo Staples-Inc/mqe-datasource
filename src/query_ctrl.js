@@ -15,7 +15,7 @@ export class MQEQueryCtrl extends QueryCtrl {
 
     var target_defaults = {
       rawQuery: "",
-      metrics: [{metric: ""}],
+      metrics: [{ metric: "", joins:[{joinOP:"", joinMetric:""}] }],
       functionList:[{ func: ""}],
       apps: [],
       hosts: [],
@@ -43,6 +43,13 @@ export class MQEQueryCtrl extends QueryCtrl {
 
     //get functions here
     this.getFunctions = _.bind(this.getFunctions, this);
+
+    // operators
+    this.availableOperators = [];
+    this.updateOperators();
+
+    // get operators here
+    this.getOperators = _.bind(this.getOperators, this);
 
     // Update panel when metric selected from dropdown
     $scope.$on('typeahead-updated', () => {
@@ -117,6 +124,21 @@ export class MQEQueryCtrl extends QueryCtrl {
     this.onChangeInternal();
   }
 
+  addJoinMetric(index) {
+    if (this.target.metrics[index].joins === undefined) {
+      this.target.metrics[index]["joins"] = [{joinOP: "", joinMetric: ""}];
+    }
+    else {
+      this.target.metrics[index]['joins'].push({joinOP:"", joinMetric:""});
+    }
+    this.onChangeInternal();
+  }
+
+  removeJoinMetric(index) {
+    this.target.metrics[index].joins.splice(this.target.metrics[index].joins.length-1, 1);
+    this.onChangeInternal();
+  }
+
   removeMetric(index) {
     this.target.metrics.splice(index, 1);
     this.onChangeInternal();
@@ -125,6 +147,22 @@ export class MQEQueryCtrl extends QueryCtrl {
   removeFunction() {
     this.target.functionList.splice(this.target.functionList.length-1, 1);
     this.onChangeInternal();
+  }
+
+  extractOpList(functions) {
+    var operatorRegex = /[\+\-\*\/~`\!@#$%\^&()|><\?]/;
+    return _.filter(functions, function (fn) {
+      return fn.search(operatorRegex) !== -1;
+    });
+  }
+
+  updateOperators() {
+    let opList = [];
+    var self = this;
+    return this.exploreMetrics('functions').then(functions => {
+      opList = this.extractOpList(functions);
+      self.availableOperators = opList;
+    });
   }
   ///////////////////////
   // Query suggestions //
@@ -137,6 +175,11 @@ export class MQEQueryCtrl extends QueryCtrl {
       metrics.unshift('$' + variable.name);
     }
     return metrics;
+  }
+
+  getOperators() {
+    let operatorList = _.clone(this.availableOperators);
+    return operatorList;
   }
 
   getFunctions() {

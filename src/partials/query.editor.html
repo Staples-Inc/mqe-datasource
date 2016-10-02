@@ -15,7 +15,7 @@
   <!-- MQE query editor -->
   <div ng-if="!ctrl.target.rawQuery">
     <div class="gf-form-inline"
-      ng-repeat="metric in ctrl.target.metrics">
+      ng-repeat="metric in ctrl.target.metrics" ng-init="parentIndex=$index">
       <div class="gf-form">
         <input type="text" class="gf-form-input width-18"
           ng-model="metric.metric"
@@ -25,6 +25,41 @@
           data-items=100
           ng-blur="ctrl.onChangeInternal()">
         </input>
+        <!-- add join operator and join metric here-->
+        <label class="gf-form-label" ng-if='metric.joins===undefined || metric.joins.length===0'>
+          <a class="pointer" ng-click="ctrl.addJoinMetric($index)">
+            <i class="fa fa-plus"></i>
+          </a>
+        </label>
+        <div class="gf-form" ng-repeat="join in metric.joins" >
+          <input type="text" class="gf-form-input width-3"
+            ng-model="join.joinOP"
+            spellcheck="false"
+            bs-typeahead="ctrl.getOperators"
+            data-min-length=0
+            data-items=100
+            ng-blur="ctrl.onChangeInternal()">
+          </input>
+          <input type="text" class="gf-form-input width-18"
+            ng-model="join.joinMetric"
+            spellcheck="false"
+            bs-typeahead="ctrl.getMetrics"
+            data-min-length=0
+            data-items=100
+            ng-blur="ctrl.onChangeInternal()">
+          </input>
+          <!-- show  + button to add join and metric -->
+          <label class="gf-form-label" ng-if="$last">
+            <a class="pointer" ng-click="ctrl.addJoinMetric(parentIndex)">
+              <i class="fa fa-plus"></i>
+            </a>
+          </label>
+          <label class="gf-form-label" ng-if="$last">
+            <a class="pointer" ng-click="ctrl.removeJoinMetric(parentIndex)">
+              <i class="fa fa-minus"></i>
+            </a>
+          </label>
+        </div>
       </div>
       <div class="gf-form">
         <label class="gf-form-label query-keyword width-4">Alias</label>
