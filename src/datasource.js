@@ -19,7 +19,6 @@ export class MQEDatasource {
     let cacheTTL =  instanceSettings.jsonData.cacheTTL || '10m';
     this.cacheTTL = parseInterval(cacheTTL);
     this.cache = {};
-
   }
 
   // Called once per panel (graph)
@@ -37,7 +36,8 @@ export class MQEDatasource {
         if (target.rawQuery) {
           // Use raw query
           mqeQuery = MQEQuery.addTimeRange(target.query, timeFrom, timeTo);
-
+          //if raw query contains the template variable like, $hosts or $cluster, expand it
+          mqeQuery = self.templateSrv.replace(mqeQuery, options.scopedVars);
           // Return query in async manner
           mqeQueryPromise = this.$q.when([mqeQuery]);
         } else {

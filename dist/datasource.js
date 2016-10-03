@@ -96,7 +96,8 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
                 if (target.rawQuery) {
                   // Use raw query
                   mqeQuery = MQEQuery.addTimeRange(target.query, timeFrom, timeTo);
-
+                  //if raw query contains the template variable like, $hosts or $cluster, expand it
+                  mqeQuery = self.templateSrv.replace(mqeQuery, options.scopedVars);
                   // Return query in async manner
                   mqeQueryPromise = _this.$q.when([mqeQuery]);
                 } else {
