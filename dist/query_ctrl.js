@@ -188,6 +188,13 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
             this.onChangeInternal();
           }
         }, {
+          key: 'checkMetrics',
+          value: function checkMetrics(selectedMetric) {
+            if (selectedMetric.search(/[*!]/) !== -1 || _.contains(this.availableMetrics, selectedMetric) === true) {
+              this.onChangeInternal();
+            }
+          }
+        }, {
           key: 'addMetric',
           value: function addMetric() {
             this.target.metrics.push({ metric: "" });

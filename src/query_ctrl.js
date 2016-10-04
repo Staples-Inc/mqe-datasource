@@ -114,6 +114,12 @@ export class MQEQueryCtrl extends QueryCtrl {
     this.onChangeInternal();
   }
 
+  checkMetrics(selectedMetric) {
+    if((selectedMetric.search(/[*!]/)) !== -1 || (_.contains(this.availableMetrics, selectedMetric) === true)) {
+      this.onChangeInternal();
+    }
+  }
+
   addMetric() {
     this.target.metrics.push({metric: ""});
     this.onChangeInternal();

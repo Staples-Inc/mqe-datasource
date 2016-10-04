@@ -8,7 +8,7 @@
       bs-typeahead="ctrl.getMetrics"
       data-min-length=0
       data-items=8
-      ng-blur="ctrl.onChangeInternal()">
+      >
     </input>
   </div>
 
@@ -23,7 +23,7 @@
           bs-typeahead="ctrl.getMetrics"
           data-min-length=0
           data-items=100
-          ng-blur="ctrl.onChangeInternal()">
+          ng-blur="ctrl.checkMetrics(metric.metric)">
         </input>
         <!-- add join operator and join metric here-->
         <label class="gf-form-label" ng-if='metric.joins===undefined || metric.joins.length===0'>
@@ -68,6 +68,7 @@
         <input type="text" class="gf-form-input width-12"
           ng-model="metric.alias"
           spellcheck="false"
+          placeholder="$Tagindex for wildcard"
           ng-blur="ctrl.onChangeInternal()">
         </input>
       </div>
@@ -129,6 +130,7 @@
             <input type="text" class="gf-form-input width-14"
                    ng-model="func.func"
                    spellcheck="false"
+                   placeholder="Function(parameters if any)"
                    bs-typeahead="ctrl.getFunctions"
                    data-min-length=0
                    data-items=100
