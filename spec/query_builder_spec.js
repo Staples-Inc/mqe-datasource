@@ -124,7 +124,7 @@ describe('MQEQuery', function() {
       target.hosts = ["host01"];
       target.apps = ["app1", "app2"];
       expected_query = [
-        "(`os.cpu.all.user`) {os.cpu.all.user} where app in ('app1', 'app2') and host in ('host01') from 1464130140000 to 1464130150000"
+        "(`os.cpu.all.user`) {os.cpu.all.user} where cluster in ('app1', 'app2') and host in ('host01') from 1464130140000 to 1464130150000"
       ];
 
       ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);

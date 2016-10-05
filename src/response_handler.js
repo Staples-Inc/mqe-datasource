@@ -13,7 +13,7 @@ export function handle_response(target, response) {
 
       var metric_prefix = _.map(series.tagset, (value, key) => {
         // Use !== false for backward compatibility
-        if ((key === 'app' && target.addAppToAlias !== false) ||
+        if ((key === 'cluster' && target.addAppToAlias !== false) ||
             (key === 'host' && target.addHostToAlias !== false)) {
           return value;
         }
