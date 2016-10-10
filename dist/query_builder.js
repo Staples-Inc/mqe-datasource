@@ -38,6 +38,46 @@ System.register(["lodash"], function (_export, _context) {
     return metricSplits;
   }
 
+  function getEachMetricTagSplits(metricSplits) {
+    console.log('Inside getEachMetricTagSplits - metricSplits ', metricSplits);
+    var newMetricSplits = [];
+    var metricSplitsLength = metricSplits.length;
+    for (var i = 0; i < metricSplitsLength; i++) {
+      var metricTag = metricSplits[i];
+      if (metricTag.search(/!/) !== -1) {
+        var metricTagCopy = metricTag;
+        var startIndex = 0,
+            endIndex = metricTag.length - 1;
+        var isRegexFound = false;
+        for (var j = 0; j < metricTag.length; j++) {
+          if (metricTag[j] === '!') {
+            endIndex = j;
+            if (startIndex !== endIndex) {
+              newMetricSplits.push(metricTagCopy.slice(startIndex, endIndex));
+            }
+            startIndex = j;
+            isRegexFound = true;
+          } else if (isRegexFound === true) {
+            if (metricTag[j] === '_') {
+              endIndex = j + 1;
+              newMetricSplits.push(metricTagCopy.slice(startIndex, endIndex));
+              startIndex = j + 1;
+              isRegexFound = false;
+            }
+          }
+          if (j === metricTag.length - 1) {
+            endIndex = metricTag.length;
+            newMetricSplits.push(metricTagCopy.slice(startIndex, endIndex));
+          }
+        }
+      } else {
+        newMetricSplits.push(metricTag);
+      }
+    }
+    console.log("new metric splits - ", newMetricSplits);
+    return newMetricSplits;
+  }
+
   function getCustomAliasName(metricSplits, indices) {
     var aliasString = "";
     for (var i = 0; i < indices.length; i++) {
@@ -76,6 +116,7 @@ System.register(["lodash"], function (_export, _context) {
   function composeRegex(str) {
     var regex = "";
     var metricSplits = getMetricSplits(str);
+    metricSplits = getEachMetricTagSplits(metricSplits);
     for (var i = 0; i < metricSplits.length; i++) {
       if (metricSplits[i].search(/!/g) !== -1) {
         str = metricSplits[i].replace(/!/g, "");
@@ -224,6 +265,9 @@ System.register(["lodash"], function (_export, _context) {
 
             var target = this.target;
             var metrics = [];
+            if (target.metrics === undefined) {
+              return;
+            }
 
             var _iteratorNormalCompletion = true;
             var _didIteratorError = false;
@@ -237,6 +281,7 @@ System.register(["lodash"], function (_export, _context) {
                 if (metric) {
                   if (containsWildcard(metric)) {
                     var filteredMetrics = filterMetrics(metric, metricList);
+                    console.log("filteredMetrics - ", filteredMetrics);
 
                     // Add alias
                     if (m.alias) {

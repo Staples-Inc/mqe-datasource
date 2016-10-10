@@ -15,7 +15,7 @@ export class MQEQueryCtrl extends QueryCtrl {
 
     var target_defaults = {
       rawQuery: "",
-      metrics: [{ metric: "", joins:[{joinOP:"", joinMetric:""}] }],
+      metrics: [{ metric: ""}],
       functionList:[{ func: ""}],
       apps: [],
       hosts: [],
@@ -38,18 +38,18 @@ export class MQEQueryCtrl extends QueryCtrl {
     // without proper context.
     this.getMetrics = _.bind(this.getMetrics, this);
 
-    this.availableFunctions = [];
-    this.udpateFunctions();
-
-    //get functions here
-    this.getFunctions = _.bind(this.getFunctions, this);
-
     // operators
     this.availableOperators = [];
     this.updateOperators();
 
     // get operators here
     this.getOperators = _.bind(this.getOperators, this);
+
+    this.availableFunctions = [];
+    this.udpateFunctions();
+
+    //get functions here
+    this.getFunctions = _.bind(this.getFunctions, this);
 
     // Update panel when metric selected from dropdown
     $scope.$on('typeahead-updated', () => {
@@ -156,15 +156,17 @@ export class MQEQueryCtrl extends QueryCtrl {
   }
 
   extractOpList(functions) {
+    var functionList = functions;
     var operatorRegex = /[\+\-\*\/~`\!@#$%\^&()|><\?]/;
-    return _.filter(functions, function (fn) {
+    return _.filter(functionList, function (fn) {
       return fn.search(operatorRegex) !== -1;
     });
   }
 
   updateOperators() {
-    let opList = [];
     var self = this;
+    var opList;
+
     return this.exploreMetrics('functions').then(functions => {
       opList = this.extractOpList(functions);
       self.availableOperators = opList;
@@ -184,7 +186,7 @@ export class MQEQueryCtrl extends QueryCtrl {
   }
 
   getOperators() {
-    let operatorList = _.clone(this.availableOperators);
+    var operatorList = _.clone(this.availableOperators);
     return operatorList;
   }
 
@@ -218,14 +220,16 @@ export class MQEQueryCtrl extends QueryCtrl {
   }
 
   refineFunctionList(functions) {
+    var functionList = [];
+    functionList.push(functions);
     var operatorlist = ['*','+','-','/'];
     _.forEach(operatorlist, function (item) {
-      var index = functions.indexOf(item);
+      var index = functionList.indexOf(item);
       if (index > -1) {
-        functions.splice(index, 1);
+        functionList.splice(index, 1);
       }
     });
-    return functions;
+    return functionList;
 
   }
   udpateFunctions() {

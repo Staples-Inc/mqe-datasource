@@ -17,6 +17,9 @@ export default class MQEQuery {
   render(metricList, timeFrom, timeTo) {
     let target = this.target;
     let metrics = [];
+    if (target.metrics === undefined) {
+      return;
+    }
 
     for (let m of target.metrics) {
       let metric = m.metric;
@@ -211,6 +214,45 @@ function getMetricSplits(str) {
 
 }
 
+function getEachMetricTagSplits(metricSplits) {
+  var newMetricSplits = [];
+  var metricSplitsLength = metricSplits.length;
+  for(var i = 0; i<metricSplitsLength; i++) {
+    var metricTag = metricSplits[i];
+    if(metricTag.search(/!/) !== -1) {
+      var metricTagCopy = metricTag;
+      var startIndex = 0, endIndex =metricTag.length-1 ;
+      var isRegexFound = false;
+      for(var j= 0; j<metricTag.length; j++) {
+        if(metricTag[j] === '!') {
+          endIndex = j;
+          if(startIndex !== endIndex){
+            newMetricSplits.push(metricTagCopy.slice(startIndex, endIndex));
+          }
+          startIndex = j;
+          isRegexFound = true;
+        }
+        else if(isRegexFound === true){
+          if(metricTag[j] === '_') {
+            endIndex = j+1;
+            newMetricSplits.push(metricTagCopy.slice(startIndex, endIndex));
+            startIndex = j+1;
+            isRegexFound = false;
+          }
+        }
+        if(j=== metricTag.length-1) {
+          endIndex = metricTag.length;
+          newMetricSplits.push(metricTagCopy.slice(startIndex, endIndex));
+        }
+      }
+    }
+    else {
+      newMetricSplits.push(metricTag);
+    }
+  }
+  return newMetricSplits;
+}
+
 function getCustomAliasName(metricSplits, indices) {
   var aliasString = "";
   for(var i = 0; i<indices.length; i++) {
@@ -249,6 +291,7 @@ function convertMetricWithIndex(functionList, indices, metric) {
 function composeRegex(str){
   var regex="";
   var metricSplits = getMetricSplits(str);
+  metricSplits = getEachMetricTagSplits(metricSplits);
   for(var i = 0; i<metricSplits.length; i++) {
     if(metricSplits[i].search(/!/g) !== -1) {
       str = metricSplits[i].replace(/!/g,"");

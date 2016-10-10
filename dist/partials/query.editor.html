@@ -46,7 +46,7 @@
             bs-typeahead="ctrl.getMetrics"
             data-min-length=0
             data-items=100
-            ng-blur="ctrl.onChangeInternal()">
+            ng-blur="ctrl.checkMetrics(join.joinMetric)">
           </input>
           <!-- show  + button to add join and metric -->
           <label class="gf-form-label" ng-if="$last">

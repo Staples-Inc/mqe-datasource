@@ -79,7 +79,7 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
 
           var target_defaults = {
             rawQuery: "",
-            metrics: [{ metric: "", joins: [{ joinOP: "", joinMetric: "" }] }],
+            metrics: [{ metric: "" }],
             functionList: [{ func: "" }],
             apps: [],
             hosts: [],
@@ -102,18 +102,19 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
           // without proper context.
           _this.getMetrics = _.bind(_this.getMetrics, _this);
 
-          _this.availableFunctions = [];
-          _this.udpateFunctions();
-
-          //get functions here
-          _this.getFunctions = _.bind(_this.getFunctions, _this);
-
           // operators
           _this.availableOperators = [];
           _this.updateOperators();
 
           // get operators here
           _this.getOperators = _.bind(_this.getOperators, _this);
+
+          _this.availableFunctions = [];
+          //this.availableTotalFunctionList = [];
+          _this.udpateFunctions();
+
+          //get functions here
+          _this.getFunctions = _.bind(_this.getFunctions, _this);
 
           // Update panel when metric selected from dropdown
           $scope.$on('typeahead-updated', function () {
@@ -237,8 +238,9 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
         }, {
           key: 'extractOpList',
           value: function extractOpList(functions) {
+            var functionList = functions;
             var operatorRegex = /[\+\-\*\/~`\!@#$%\^&()|><\?]/;
-            return _.filter(functions, function (fn) {
+            return _.filter(functionList, function (fn) {
               return fn.search(operatorRegex) !== -1;
             });
           }
@@ -247,8 +249,9 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
           value: function updateOperators() {
             var _this4 = this;
 
-            var opList = [];
             var self = this;
+            var opList;
+
             return this.exploreMetrics('functions').then(function (functions) {
               opList = _this4.extractOpList(functions);
               self.availableOperators = opList;
@@ -289,6 +292,10 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
         }, {
           key: 'getOperators',
           value: function getOperators() {
+            //if(this.availableOperators.length === 0) {
+            //  var functions = this.availableTotalFunctionList;
+            //  this.availableOperators = this.extractOpList(functions);
+            //}
             var operatorList = _.clone(this.availableOperators);
             return operatorList;
           }
@@ -354,14 +361,16 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
         }, {
           key: 'refineFunctionList',
           value: function refineFunctionList(functions) {
+            var functionList = [];
+            functionList.push(functions);
             var operatorlist = ['*', '+', '-', '/'];
             _.forEach(operatorlist, function (item) {
-              var index = functions.indexOf(item);
+              var index = functionList.indexOf(item);
               if (index > -1) {
-                functions.splice(index, 1);
+                functionList.splice(index, 1);
               }
             });
-            return functions;
+            return functionList;
           }
         }, {
           key: 'udpateFunctions',
@@ -373,6 +382,7 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
 
             return this.exploreMetrics('functions').then(function (functions) {
               // remove operators like *+-/ from the function list
+              //self.availableTotalFunctionList = functions;
               functionList = _this7.refineFunctionList(functions);
               self.availableFunctions = functionList;
             });
