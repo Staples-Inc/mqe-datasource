@@ -110,7 +110,6 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
           _this.getOperators = _.bind(_this.getOperators, _this);
 
           _this.availableFunctions = [];
-          //this.availableTotalFunctionList = [];
           _this.udpateFunctions();
 
           //get functions here
@@ -292,10 +291,6 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
         }, {
           key: 'getOperators',
           value: function getOperators() {
-            //if(this.availableOperators.length === 0) {
-            //  var functions = this.availableTotalFunctionList;
-            //  this.availableOperators = this.extractOpList(functions);
-            //}
             var operatorList = _.clone(this.availableOperators);
             return operatorList;
           }
@@ -382,7 +377,6 @@ System.register(['angular', 'lodash', 'app/plugins/sdk', './query_builder'], fun
 
             return this.exploreMetrics('functions').then(function (functions) {
               // remove operators like *+-/ from the function list
-              //self.availableTotalFunctionList = functions;
               functionList = _this7.refineFunctionList(functions);
               self.availableFunctions = functionList;
             });

@@ -8,7 +8,8 @@ describe('MQEQuery', function() {
     'os.cpu.all.active',
     'os.disk.sda.io_time',
     'os.disk.sdb.io_time',
-    'os.disk.sdc.io_time'
+    'os.disk.sdc.io_time',
+    'os.disk.sdc.io_wait'
   ];
   var target_template = {
     metrics: [
@@ -224,5 +225,92 @@ describe('MQEQuery', function() {
       done();
     });
 
+    it('should render proper query when wildcard (!) used', function(done) {
+      var target = {
+        metrics: [
+          {metric: "os.cpu.all.!user"}
+        ],
+        functionList: [{ func: '' }],
+        apps: [],
+        hosts: []
+      };
+
+      var expected_query = [
+        "(`os.cpu.all.system`) {os.cpu.all.system} from 1464130140000 to 1464130150000",
+        "(`os.cpu.all.active`) {os.cpu.all.active} from 1464130140000 to 1464130150000"
+      ];
+
+      ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
+      var result = ctx.query.render(metricList, ctx.timeFrom, ctx.timeTo, ctx.interval);
+
+      expect(result).to.deep.equal(expected_query);
+      done();
+    });
+
+    it('should render proper query when wildcard (!) used', function(done) {
+      var target = {
+        metrics: [
+          {metric: "os.disk.!sda.io_time"}
+        ],
+        functionList: [{ func: '' }],
+        apps: [],
+        hosts: []
+      };
+
+      var expected_query = [
+        "(`os.disk.sdb.io_time`) {os.disk.sdb.io_time} from 1464130140000 to 1464130150000",
+        "(`os.disk.sdc.io_time`) {os.disk.sdc.io_time} from 1464130140000 to 1464130150000"
+      ];
+
+      ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
+      var result = ctx.query.render(metricList, ctx.timeFrom, ctx.timeTo, ctx.interval);
+
+      expect(result).to.deep.equal(expected_query);
+      done();
+    });
+
+    it('should render proper query when wildcard (* and !) used', function(done) {
+      var target = {
+        metrics: [
+          {metric: "os.!disk.*"}
+        ],
+        functionList: [{ func: '' }],
+        apps: [],
+        hosts: []
+      };
+
+      var expected_query = [
+        "(`os.cpu.all.user`) {os.cpu.all.user} from 1464130140000 to 1464130150000",
+        "(`os.cpu.all.system`) {os.cpu.all.system} from 1464130140000 to 1464130150000",
+        "(`os.cpu.all.active`) {os.cpu.all.active} from 1464130140000 to 1464130150000"
+      ];
+
+      ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
+      var result = ctx.query.render(metricList, ctx.timeFrom, ctx.timeTo, ctx.interval);
+
+      expect(result).to.deep.equal(expected_query);
+      done();
+    });
+
+    it('should render proper query when wildcard (! within a single tag separated with _ ) used', function(done) {
+      var target = {
+        metrics: [
+          {metric: "os.disk.sdc.io_!time"}
+        ],
+        functionList: [{ func: '' }],
+        apps: [],
+        hosts: []
+      };
+
+      var expected_query = [
+        "(`os.disk.sdc.io_wait`) {os.disk.sdc.io_wait} from 1464130140000 to 1464130150000"
+      ];
+
+      ctx.query = new MQEQuery(target, ctx.templateSrv, ctx.scopedVars);
+      var result = ctx.query.render(metricList, ctx.timeFrom, ctx.timeTo, ctx.interval);
+
+      expect(result).to.deep.equal(expected_query);
+      done();
+    });
   });
 });

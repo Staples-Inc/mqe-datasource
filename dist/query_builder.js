@@ -39,7 +39,6 @@ System.register(["lodash"], function (_export, _context) {
   }
 
   function getEachMetricTagSplits(metricSplits) {
-    console.log('Inside getEachMetricTagSplits - metricSplits ', metricSplits);
     var newMetricSplits = [];
     var metricSplitsLength = metricSplits.length;
     for (var i = 0; i < metricSplitsLength; i++) {
@@ -74,7 +73,6 @@ System.register(["lodash"], function (_export, _context) {
         newMetricSplits.push(metricTag);
       }
     }
-    console.log("new metric splits - ", newMetricSplits);
     return newMetricSplits;
   }
 
@@ -281,7 +279,6 @@ System.register(["lodash"], function (_export, _context) {
                 if (metric) {
                   if (containsWildcard(metric)) {
                     var filteredMetrics = filterMetrics(metric, metricList);
-                    console.log("filteredMetrics - ", filteredMetrics);
 
                     // Add alias
                     if (m.alias) {
