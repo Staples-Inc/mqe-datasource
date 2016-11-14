@@ -66,7 +66,6 @@ System.register(["lodash"], function (_export, _context) {
       MQEQuery = function () {
 
         /** @ngInject */
-
         function MQEQuery(target, templateSrv, scopedVars) {
           _classCallCheck(this, MQEQuery);
 
