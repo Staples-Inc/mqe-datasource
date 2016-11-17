@@ -24,7 +24,6 @@ System.register(['lodash'], function (_export, _context) {
           }
         }).join(' ');
 
-        console.log('serie name: ', metric_prefix + ' ' + body.name);
         return {
           target: metric_prefix + ' ' + body.name,
           datapoints: datapoints
@@ -32,9 +31,7 @@ System.register(['lodash'], function (_export, _context) {
       });
     });
 
-    var f = _.flatten(timeseries, true);
-    console.log(f);
-    return f;
+    return _.flatten(timeseries, true);
   }
 
   _export('handle_response', handle_response);

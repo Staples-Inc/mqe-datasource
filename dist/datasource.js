@@ -183,6 +183,12 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
             });
           }
         }, {
+          key: 'targetContainsTemplate',
+          value: function targetContainsTemplate(target) {
+            //TODO
+            return false;
+          }
+        }, {
           key: '_mqe_query',
           value: function _mqe_query(query) {
             var mqe_query = {

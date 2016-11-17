@@ -123,6 +123,11 @@ export class MQEDatasource {
     });
   }
 
+  targetContainsTemplate(target) {
+    //TODO
+    return false;
+  };
+
   _mqe_query(query) {
     var mqe_query = {
       query: query
