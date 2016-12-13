@@ -6,7 +6,7 @@ export function handle_response(target, response) {
       var timerange = body.timerange;
       var datapoints = _.map(series.values, (value, index) => {
         return [
-          Number(value), // value
+          value, // value
           Number(timerange.start + timerange.resolution * index)  // timestamp
         ];
       });

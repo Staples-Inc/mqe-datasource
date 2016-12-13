@@ -122,7 +122,7 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
             });
             return this.$q.all(_.flatten(queries)).then(function (result) {
               return {
-                data: _.flatten(result)
+                data: _.flattenDeep(result)
               };
             });
           }
@@ -130,7 +130,7 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
           key: 'testDatasource',
           value: function testDatasource() {
             return this.backendSrv.datasourceRequest({
-              url: this.url + '/',
+              url: this.url + '/ui',
               method: 'GET'
             }).then(function (response) {
               if (response.status === 200) {

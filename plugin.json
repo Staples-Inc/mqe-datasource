@@ -11,6 +11,7 @@
 
   "metrics": true,
   "annotations": false,
+  "alerting": true,
 
   "info": {
     "description": "MQE (Metrics Query Engine) datasource",
