@@ -61,7 +61,7 @@ export class MQEDatasource {
     });
     return this.$q.all(_.flatten(queries)).then(result => {
       return {
-        data: _.flatten(result)
+        data: _.flattenDeep(result)
       };
     });
   }
@@ -70,7 +70,7 @@ export class MQEDatasource {
   // Used for testing datasource in datasource configuration pange
   testDatasource() {
     return this.backendSrv.datasourceRequest({
-      url: this.url + '/',
+      url: this.url + '/ui',
       method: 'GET'
     }).then(response => {
       if (response.status === 200) {
@@ -122,6 +122,11 @@ export class MQEDatasource {
       return response_handler.handle_explore_response(query, result);
     });
   }
+
+  targetContainsTemplate(target) {
+    //TODO
+    return false;
+  };
 
   _mqe_query(query) {
     var mqe_query = {

@@ -121,7 +121,7 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
             });
             return this.$q.all(_.flatten(queries)).then(function (result) {
               return {
-                data: _.flatten(result)
+                data: _.flattenDeep(result)
               };
             });
           }
@@ -129,7 +129,7 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
           key: 'testDatasource',
           value: function testDatasource() {
             return this.backendSrv.datasourceRequest({
-              url: this.url + '/',
+              url: this.url + '/ui',
               method: 'GET'
             }).then(function (response) {
               if (response.status === 200) {
@@ -181,6 +181,12 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
             return tokenRequest.then(function (result) {
               return response_handler.handle_explore_response(query, result);
             });
+          }
+        }, {
+          key: 'targetContainsTemplate',
+          value: function targetContainsTemplate(target) {
+            //TODO
+            return false;
           }
         }, {
           key: '_mqe_query',

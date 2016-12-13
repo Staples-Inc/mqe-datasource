@@ -28,6 +28,7 @@ export function handle_response(target, response) {
       };
     });
   });
+
   return _.flatten(timeseries, true);
 }
 
