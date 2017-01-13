@@ -168,7 +168,7 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
 
             if (!this.cache.token || Date.now() - this.cache.token.timestamp > this.cacheTTL) {
 
-              tokenRequest = this._get('/token/').then(function (response) {
+              tokenRequest = this._get('/token').then(function (response) {
                 _this2.cache.token = {
                   timestamp: Date.now(),
                   value: response.data

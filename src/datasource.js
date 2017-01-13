@@ -109,7 +109,7 @@ export class MQEDatasource {
     if (!this.cache.token ||
         Date.now() - this.cache.token.timestamp > this.cacheTTL) {
 
-      tokenRequest = this._get('/token/').then(response => {
+      tokenRequest = this._get('/token').then(response => {
         this.cache.token = {
           timestamp: Date.now(),
           value: response.data
