@@ -105,21 +105,33 @@ export class MQEDatasource {
   // For Staples only.
   _mqe_explore(query) {
     let tokenRequest;
-
-    if (!this.cache.token ||
-        Date.now() - this.cache.token.timestamp > this.cacheTTL) {
-
-      tokenRequest = this._get('/token').then(response => {
-        this.cache.token = {
-          timestamp: Date.now(),
-          value: response.data
-        };
-        return response.data;
-      });
+    if (query === 'hosts' || query === 'cluster') {
+      if (!this.cache.tag || Date.now() - this.cache.tag.timestamp > this.cacheTTL) {
+        tokenRequest = this._get('/tags').then(response => {
+          this.cache.tag = {
+            timestamp: Date.now(),
+            value: response.data
+          };
+          return response.data;
+        });
+      } else {
+        tokenRequest = this.$q.when(this.cache.tag.value);
+      }
     } else {
-      tokenRequest = this.$q.when(this.cache.token.value);
-    }
+      if (!this.cache.token ||
+          Date.now() - this.cache.token.timestamp > this.cacheTTL) {
 
+        tokenRequest = this._get('/token').then(response => {
+          this.cache.token = {
+            timestamp: Date.now(),
+            value: response.data
+          };
+          return response.data;
+        });
+      } else {
+        tokenRequest = this.$q.when(this.cache.token.value);
+      }
+    }
     return tokenRequest.then(result => {
       return response_handler.handle_explore_response(query, result);
     });

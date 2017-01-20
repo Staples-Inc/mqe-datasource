@@ -165,20 +165,32 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './query_builder
             var _this2 = this;
 
             var tokenRequest = void 0;
-
-            if (!this.cache.token || Date.now() - this.cache.token.timestamp > this.cacheTTL) {
-
-              tokenRequest = this._get('/token').then(function (response) {
-                _this2.cache.token = {
-                  timestamp: Date.now(),
-                  value: response.data
-                };
-                return response.data;
-              });
+            if (query === 'hosts' || query === 'cluster') {
+              if (!this.cache.tag || Date.now() - this.cache.tag.timestamp > this.cacheTTL) {
+                tokenRequest = this._get('/tags').then(function (response) {
+                  _this2.cache.tag = {
+                    timestamp: Date.now(),
+                    value: response.data
+                  };
+                  return response.data;
+                });
+              } else {
+                tokenRequest = this.$q.when(this.cache.tag.value);
+              }
             } else {
-              tokenRequest = this.$q.when(this.cache.token.value);
-            }
+              if (!this.cache.token || Date.now() - this.cache.token.timestamp > this.cacheTTL) {
 
+                tokenRequest = this._get('/token').then(function (response) {
+                  _this2.cache.token = {
+                    timestamp: Date.now(),
+                    value: response.data
+                  };
+                  return response.data;
+                });
+              } else {
+                tokenRequest = this.$q.when(this.cache.token.value);
+              }
+            }
             return tokenRequest.then(function (result) {
               return response_handler.handle_explore_response(query, result);
             });

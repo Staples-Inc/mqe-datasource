@@ -56,9 +56,9 @@ System.register(['lodash'], function (_export, _context) {
     if (query === 'tagset') {
       return getTagset(response);
     } else if (query === 'cluster') {
-      return getTagset(response)['cluster'];
+      return response.body['cluster'];
     } else if (query === 'hosts') {
-      return getTagset(response)['hosts'];
+      return response.body['host'];
     } else {
       return response.body[query];
     }
