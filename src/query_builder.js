@@ -31,16 +31,15 @@ export default class MQEQuery {
               // query: os.cpu.* alias: * -> metric: os.cpu.system -> alias: system
               filteredMetrics = _.map(filteredMetrics,
                 _.partial(convertMetricWithWildcard, target.functionList, metric));
-            } else if(containsIndex(m.alias)){
+            } else if (containsIndex(m.alias)) {
               // query: tag1.tag2.* (the  metric can be very lengthy like below)
               // metric: tag1.tag2.tag3.tag4.tag5.tag6
               // alias: $6 ie show only tag6
               var indices = getAliasIndexArray(m.alias);
               filteredMetrics = _.map(filteredMetrics, _.partial(convertMetricWithIndex, target.functionList, indices));
-            }
-            else {
+            } else {
               filteredMetrics = _.map(filteredMetrics,
-                _.compose(_.partial(this.addFunctionsWithAlias, target.functionList, m.alias), wrapMetric));
+                _.flowRight(_.partial(this.addFunctionsWithAlias, target.functionList, m.alias), wrapMetric));
             }
           } else {
             filteredMetrics = _.map(filteredMetrics, _.partial(this.addFunctionsToMetric, target.functionList));
@@ -49,20 +48,26 @@ export default class MQEQuery {
           metrics = metrics.concat(filteredMetrics);
         } else {
           var defaultAlias = metric;
-          metric = wrapMetric(metric);
+          var wrappedMetric = wrapMetric(metric);
+
           // add functions here for single metric without wildcard
           // Render functions if any
-          if(target.functionList !== undefined) {
+          if (target.functionList !== undefined) {
             if (target.functionList.length !== 0) {
               metric += addFunctions(target.functionList);
             }
           }
+
           // Add alias
           if (m.alias) {
-            metric = addMQEAlias(m.alias, metric);
-          }
-          else {
-            metric = addMQEAlias(defaultAlias, metric);
+            if (containsIndex(m.alias)) {
+              let indices = getAliasIndexArray(m.alias);
+              metric = addMQEAlias(getCustomAliasName(getMetricSplits(metric), indices), wrappedMetric);
+            } else {
+              metric = addMQEAlias(m.alias, wrappedMetric);
+            }
+          } else {
+            metric = addMQEAlias(defaultAlias, wrappedMetric);
           }
           metrics = metrics.concat(metric);
         }
@@ -92,19 +97,19 @@ export default class MQEQuery {
   }
 
   addFunctionsWithAlias(functionList, alias, metric) {
-    if(functionList !== undefined) {
+    if (functionList !== undefined) {
       if (functionList.length !== 0) {
         metric += addFunctions(functionList);
       }
     }
-    var resultmetric =  addMQEAlias(alias, metric);
+    var resultmetric = addMQEAlias(alias, metric);
     return resultmetric;
   }
 
   addFunctionsToMetric(functionList, metric) {
     let defaultAlias = metric;
     metric = wrapMetric(metric);
-    if(functionList !== undefined) {
+    if (functionList !== undefined) {
       if (functionList.length !== 0) {
         metric += addFunctions(functionList);
         return addMQEAlias(defaultAlias, metric);
@@ -119,7 +124,7 @@ export default class MQEQuery {
       query += " where ";
       if (apps.length) {
         query += "cluster in (" + _.map(apps, wrapTag).join(', ') + ")";
-        if (hosts.length)  {
+        if (hosts.length) {
           query += " and ";
         }
       }
@@ -140,7 +145,7 @@ export default class MQEQuery {
       // Put non-numeric values into quotes.
       var value;
       if (_.isNumber(clauseObj.value) ||
-          this.containsVariable(clauseObj.value)) {
+        this.containsVariable(clauseObj.value)) {
         value = clauseObj.value;
       } else {
         value = "'" + clauseObj.value + "'";
@@ -175,7 +180,7 @@ export default class MQEQuery {
 
   static addTimeRange(query, timeFrom, timeTo) {
     var timeRangeRegex = /from.*to/;
-    if(!timeRangeRegex.test(query)) {
+    if (!timeRangeRegex.test(query)) {
       query = trim(query) + " from " + timeFrom + " to " + timeTo;
     }
     return query;
@@ -198,7 +203,7 @@ function getAliasIndexArray(str) {
   str = str.replace(/\$/g, ' ');
   str = str.trim();
   var indices = str.split(' ');
-  for(var i=0; i<indices.length; i++) {
+  for (var i = 0; i < indices.length; i++) {
     indices[i] = parseInt(indices[i], 10);
   }
   return indices;
@@ -212,20 +217,20 @@ function getMetricSplits(str) {
 
 function getCustomAliasName(metricSplits, indices) {
   var aliasString = "";
-  for(var i = 0; i<indices.length; i++) {
-    var index = indices[i]-1;
-    if(index >= 0 && index <  metricSplits.length) {
+  for (var i = 0; i < indices.length; i++) {
+    var index = indices[i] - 1;
+    if (index >= 0 && index < metricSplits.length) {
       aliasString += metricSplits[indices[i] - 1] + ".";
     }
   }
   return aliasString.slice(0, -1);
 }
 
-function addFunctions(functions){
+function addFunctions(functions) {
   var query = "";
   if (functions.length) {
-    _.forEach(functions, function (fn) {
-      if(fn.func.length !== 0) {
+    _.forEach(functions, function(fn) {
+      if (fn.func.length !== 0) {
         query += "|" + fn.func + " ";
       }
     });
@@ -234,9 +239,9 @@ function addFunctions(functions){
 }
 
 function convertMetricWithIndex(functionList, indices, metric) {
-  var suffix = getCustomAliasName(getMetricSplits(metric),indices);
+  var suffix = getCustomAliasName(getMetricSplits(metric), indices);
   metric = wrapMetric(metric);
-  if(functionList !== undefined) {
+  if (functionList !== undefined) {
     if (functionList.length !== 0) {
       metric += addFunctions(functionList);
     }
@@ -245,22 +250,20 @@ function convertMetricWithIndex(functionList, indices, metric) {
   return addMQEAlias(suffix, metric);
 }
 
-function composeRegex(str){
-  var regex="";
+function composeRegex(str) {
+  var regex = "";
   var metricSplits = getMetricSplits(str);
-  for(var i = 0; i<metricSplits.length; i++) {
-    if(metricSplits[i].search(/!/g) !== -1) {
-      str = metricSplits[i].replace(/!/g,"");
-      regex += "^(?!.*"+str;
+  for (var i = 0; i < metricSplits.length; i++) {
+    if (metricSplits[i].search(/!/g) !== -1) {
+      str = metricSplits[i].replace(/!/g, "");
+      regex += "^(?!.*" + str;
+    } else if (metricSplits[i].search(/\*/g) !== -1) {
+      str = metricSplits[i].replace(/\*/g, "");
+      regex += "(?=.*" + str;
+    } else {
+      regex += "(?=.*" + metricSplits[i];
     }
-    else if(metricSplits[i].search(/\*/g) !== -1) {
-      str = metricSplits[i].replace(/\*/g,"");
-      regex += "(?=.*"+str;
-    }
-    else {
-      regex += "(?=.*"+metricSplits[i];
-    }
-    regex += (i === metricSplits.length-1) ? ")" : "\.)";
+    regex += (i === metricSplits.length - 1) ? ")" : "\.)";
   }
   regex = new RegExp(regex);
   return regex;
@@ -268,12 +271,11 @@ function composeRegex(str){
 
 function filterMetrics(str, metrics) {
   let filterRegex;
-  var  containsFilter = str.search(/!/);
+  var containsFilter = str.search(/!/);
 
-  if(containsFilter !== -1) {
+  if (containsFilter !== -1) {
     filterRegex = composeRegex(str);
-  }
-  else {
+  } else {
     str = str.replace(/\./g, '\\\.');
     filterRegex = new RegExp(str.replace('*', '.*'), 'g');
   }
@@ -293,7 +295,7 @@ function convertMetricWithWildcard(functions, metricQuery, metric) {
   metric = wrapMetric(metric);
 
   // Render functions if any  before add alias
-  if(functions !== undefined) {
+  if (functions !== undefined) {
     if (functions.length !== 0) {
       metric += addFunctions(functions);
     }

@@ -229,7 +229,7 @@ System.register(["lodash"], function (_export, _context) {
                         var indices = getAliasIndexArray(m.alias);
                         filteredMetrics = _.map(filteredMetrics, _.partial(convertMetricWithIndex, target.functionList, indices));
                       } else {
-                        filteredMetrics = _.map(filteredMetrics, _.compose(_.partial(this.addFunctionsWithAlias, target.functionList, m.alias), wrapMetric));
+                        filteredMetrics = _.map(filteredMetrics, _.flowRight(_.partial(this.addFunctionsWithAlias, target.functionList, m.alias), wrapMetric));
                       }
                     } else {
                       filteredMetrics = _.map(filteredMetrics, _.partial(this.addFunctionsToMetric, target.functionList));
@@ -238,7 +238,8 @@ System.register(["lodash"], function (_export, _context) {
                     metrics = metrics.concat(filteredMetrics);
                   } else {
                     var defaultAlias = metric;
-                    metric = wrapMetric(metric);
+                    var wrappedMetric = wrapMetric(metric);
+
                     // add functions here for single metric without wildcard
                     // Render functions if any
                     if (target.functionList !== undefined) {
@@ -246,11 +247,17 @@ System.register(["lodash"], function (_export, _context) {
                         metric += addFunctions(target.functionList);
                       }
                     }
+
                     // Add alias
                     if (m.alias) {
-                      metric = addMQEAlias(m.alias, metric);
+                      if (containsIndex(m.alias)) {
+                        var _indices = getAliasIndexArray(m.alias);
+                        metric = addMQEAlias(getCustomAliasName(getMetricSplits(metric), _indices), wrappedMetric);
+                      } else {
+                        metric = addMQEAlias(m.alias, wrappedMetric);
+                      }
                     } else {
-                      metric = addMQEAlias(defaultAlias, metric);
+                      metric = addMQEAlias(defaultAlias, wrappedMetric);
                     }
                     metrics = metrics.concat(metric);
                   }
