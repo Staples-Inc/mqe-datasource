@@ -54,7 +54,7 @@ export default class MQEQuery {
           // Render functions if any
           if (target.functionList !== undefined) {
             if (target.functionList.length !== 0) {
-              metric += addFunctions(target.functionList);
+              wrappedMetric += addFunctions(target.functionList);
             }
           }
 
