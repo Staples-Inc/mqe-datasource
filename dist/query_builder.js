@@ -213,6 +213,14 @@ System.register(["lodash"], function (_export, _context) {
 
                 var metric = m.metric;
                 if (metric) {
+
+                  // Set custom metric format function
+                    var formatValueOriginal = _this.templateSrv.formatValue;
+                    _this.templateSrv.formatValue = formatMQEMetric;
+                    metric = _this.templateSrv.replace(metric, _this.scopedVars);
+
+                    // Set original format function
+                    _this.templateSrv.formatValue = formatValueOriginal;
                   if (containsWildcard(metric)) {
                     var filteredMetrics = filterMetrics(metric, metricList);
 
@@ -283,13 +291,7 @@ System.register(["lodash"], function (_export, _context) {
             return _.map(metrics, function (metric) {
               var query = "";
 
-              // Set custom metric format function
-              var formatValueOriginal = _this.templateSrv.formatValue;
-              _this.templateSrv.formatValue = formatMQEMetric;
-              metric = _this.templateSrv.replace(metric, _this.scopedVars);
-
-              // Set original format function
-              _this.templateSrv.formatValue = formatValueOriginal;
+              
 
               query += metric;
 
